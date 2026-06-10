@@ -117,6 +117,8 @@ Ce dépôt est à la **phase Spec + Plan** de la méthode spec-kit. Sont présen
 | Backlog de construction | [`specs/001-forge/tasks.md`](specs/001-forge/tasks.md) |
 | **Analyse approfondie** (améliorations, outils externes, async, normalisation, concurrence) | [`specs/001-forge/analysis.md`](specs/001-forge/analysis.md) |
 | **Coût & routage modèle** (comptabilité tokens, budget, local vs cloud) | [`specs/001-forge/cost-and-routing.md`](specs/001-forge/cost-and-routing.md) |
+| **Librairie d'outils intégrables** (par fonction du pipeline : CLI/SARIF/MCP/REST) | [`docs/tool-integration.md`](docs/tool-integration.md) · code : `forge/tools/` |
+| **Échanges normalisés entre agents** (enveloppe, taxonomies, contrats, références normatives) | [`docs/protocol.md`](docs/protocol.md) · code : `forge/protocol.py` |
 | Manifeste des agents | [`AGENTS.md`](AGENTS.md) |
 | Design de l'app vulnérable | [`docs/vulnshop.md`](docs/vulnshop.md) |
 

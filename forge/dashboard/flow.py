@@ -96,6 +96,8 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 .fstage{background:#0f1620;border:1px solid var(--line);border-radius:10px;padding:8px 16px;text-align:center;min-width:86px}
 .fstage .fn{font-size:24px;font-weight:800}.fstage .fl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
 .farrow{color:var(--mut);font-size:14px;text-align:center;padding:0 2px}.farrow .fd{font-size:9.5px;color:var(--bad)}
+.leg-flow{position:fixed;left:14px;bottom:10px;font-size:10.5px;color:var(--mut);background:rgba(13,17,23,.82);border:1px solid var(--line);border-radius:8px;padding:5px 10px;z-index:15}
+.leg-flow b{color:var(--ink)}
 </style></head><body>
 <header>
   <h1><b>FORGE</b> · pipeline</h1>
@@ -116,6 +118,9 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Code source</span>
   <span class="pull" id="p-find" onclick="togglePanel('find')">🛡 Findings</span>
   <span class="pull" id="p-out" onclick="togglePanel('out')">📤 Sortie priorisée</span>
+  <span class="pull" id="p-tasks" onclick="togglePanel('tasks')">📋 Tâches</span>
+  <span class="pull" id="p-exch" onclick="togglePanel('exch')">🔀 Échanges</span>
+  <span class="pull" id="p-tools" onclick="togglePanel('tools')">🧰 Outils</span>
   <span style="margin-left:auto;font-size:11px;color:var(--mut)" id="outflow">—</span>
 </div>
 <div class="panel" id="panel-res"></div>
@@ -123,6 +128,9 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 <div class="panel" id="panel-code"></div>
 <div class="panel" id="panel-find"></div>
 <div class="panel" id="panel-out"></div>
+<div class="panel" id="panel-tasks"></div>
+<div class="panel" id="panel-exch"></div>
+<div class="panel" id="panel-tools"></div>
 <div class="stage" id="stage"><div class="canvas" id="cv"><svg class="edges" id="svg" viewBox="0 0 1520 660"></svg></div></div>
 <aside class="insp" id="insp">
   <h2>Inspecteur — donnée du pas courant</h2>
@@ -130,6 +138,7 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <div id="i-data"></div>
   <div class="slog"><h2>Journal des pas</h2><div id="i-log"></div></div>
 </aside>
+<div class="leg-flow">━ flux de données (animé) &nbsp;·&nbsp; ┄ supervision (orchestrateur → tous) &nbsp;·&nbsp; <b>cliquez une arête</b> pour le contrat d'échange normalisé</div>
 <div class="ov" id="ov"><div class="modal" id="modal"></div></div>
 <script>
 const COL={operator:'#9aa5b1',orchestrator:'#58a6ff',indexer:'#39c5cf',cartographer:'#34d399',
@@ -175,11 +184,21 @@ const mkpath=(a,b)=>{
    return `M ${a[0]} ${a[1]} C ${a[0]+70} ${BASEY}, ${b[0]-70} ${BASEY}, ${b[0]} ${b[1]}`;}
  const dx=Math.max(40,(b[0]-a[0])*0.5);
  return `M ${a[0]} ${a[1]} C ${a[0]+dx} ${a[1]}, ${b[0]-dx} ${b[1]}, ${b[0]} ${b[1]}`;};
+const NS='http://www.w3.org/2000/svg';
+// Supervision : l'Orchestrateur interagit avec TOUS les agents (pointillés discrets, cliquables).
+for(const id of ['indexer','cartographer','detector','triager','validator','reporter','coverage']){
+ const a=out(N['orchestrator']),b=inp(N[id]);const p=document.createElementNS(NS,'path');
+ p.setAttribute('d',mkpath(a,b));p.setAttribute('fill','none');p.setAttribute('stroke','#8b949e');
+ p.setAttribute('stroke-width','1');p.setAttribute('stroke-dasharray','3 5');p.setAttribute('opacity','0.16');
+ p.style.cursor='pointer';p.style.pointerEvents='stroke';p.onclick=()=>openExchange('orchestrator','(tous)');svg.appendChild(p);}
 const EP=[];
 for(const e of EDGES){const a=out(N[e.f]),b=inp(N[e.t]);
- const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',mkpath(a,b));
+ const p=document.createElementNS(NS,'path');p.setAttribute('d',mkpath(a,b));
  p.setAttribute('fill','none');p.setAttribute('stroke','#222b36');p.setAttribute('stroke-width','2');svg.appendChild(p);
- const dots=[];for(let k=0;k<4;k++){const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+ const hit=document.createElementNS(NS,'path');hit.setAttribute('d',mkpath(a,b));hit.setAttribute('fill','none');
+ hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','14');hit.style.cursor='pointer';
+ hit.style.pointerEvents='stroke';hit.onclick=()=>openExchange(e.f,e.t);svg.appendChild(hit);
+ const dots=[];for(let k=0;k<4;k++){const c=document.createElementNS(NS,'circle');
   c.setAttribute('r','3.6');c.setAttribute('opacity','0');svg.appendChild(c);dots.push(c);}
  EP.push({e,p,dots,len:p.getTotalLength()});}
 let STATE={cand:0,tp:0,exploited:0,exploitableTP:0,covOpen:0,covDone:false},CUR_EDGE=null,LAST=null,OPEN=null;
@@ -286,6 +305,17 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
    (f.remediation?`<div class="card" style="margin-top:10px"><h4>Remédiation (règle ${esc(f.rule_id||'')})</h4><pre class="expl">${esc(f.remediation)}</pre></div>`:'')+
   `</div>`;
  document.getElementById('ov').style.display='flex';}
+function openExchange(f,t){const s=LAST;if(!s||!s.protocol)return;const ex=s.protocol.exchanges||[];
+ const e=ex.find(x=>x.frm===f&&x.to===t)||ex.find(x=>x.frm===f&&(x.to==='(tous)'||x.to==='(sortie)'));
+ if(!e)return;OPEN='exch:'+e.id;
+ document.getElementById('modal').innerHTML=
+  `<div class="mh"><span class="ic" style="background:#58a6ff">⇄</span><h3>${esc(e.label)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
+  `<div class="mb"><div class="verdbar"><span class="vd">${esc(e.frm)} → ${esc(e.to)}</span><span class="vd" style="border-color:#58a6ff;color:#58a6ff">payload : ${esc(e.payload)}</span></div>`+
+   `<div class="card" style="margin-top:10px"><h4>Données (schéma normalisé)</h4><table class="mono" style="font-size:11.5px;width:100%">${(e.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:12px;vertical-align:top">${esc(fl[0])}</td><td style="color:#8b949e">${esc(fl[1])}</td></tr>`).join('')}</table></div>`+
+   `<div class="grid2" style="margin-top:10px"><div class="card"><h4>Format</h4><div class="expl">${esc(e.format)}</div></div>`+
+   `<div class="card"><h4>Références normatives</h4><div class="taglist">${(e.refs||[]).map(r=>`<span>${esc(r)}</span>`).join('')}</div></div></div>`+
+  `</div>`;
+ document.getElementById('ov').style.display='flex';}
 let PANEL=null,SELFILE=null;
 function togglePanel(id){const cur=PANEL===id;document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
  document.querySelectorAll('.pull').forEach(b=>b.classList.remove('on'));
@@ -327,6 +357,37 @@ function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
     stg(fu.exploited,'exploités','#f85149')+`</div>`+
    `<div class="grid2" style="margin-top:12px"><div class="card"><h4>⚡ Tier 1 — prouvés en live (prioritaires)</h4>${proven.map(row).join('')||'<span class=hint>—</span>'}</div>`+
    `<div class="card"><h4>✓ Tier 2 — confirmés, non démontrés en live (présence = vuln)</h4>${conf.map(row).join('')||'<span class=hint>—</span>'}</div></div>`;}
+ if(PANEL==='tasks'){const TL=s.tasks_list||[];const grp={claimed:[],open:[],blocked:[],closed:[]};
+  TL.forEach(t=>{(grp[t.state]||grp.closed).push(t);});
+  const sec=(title,arr,col,by)=>arr.length?`<div style="margin-bottom:8px"><div class="leg" style="color:${col};font-weight:700">${title} (${arr.length})</div>`+
+    arr.map(t=>`<div class="row mono" style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'—')}</span> · ${esc(t.title)}</span>${by&&t.by?`<span style="color:var(--ok)">▶ ${esc(t.by)}</span>`:''}</div>`).join('')+`</div>`:'';
+  document.getElementById('panel-tasks').innerHTML=`<h3>File de tâches — en cours (par quel agent) · à venir · faites · bloquées</h3>`+
+   (TL.length?(sec('⏳ En cours',grp.claimed,'#d29922',true)+sec('📥 À venir',grp.open,'#58a6ff',false)+sec('⛔ Bloquées',grp.blocked,'#f85149',false)+sec('✅ Faites',grp.closed.slice(0,100),'#3fb950',false)):'<span class=hint>file vide</span>');}
+ if(PANEL==='exch'){const pr=s.protocol||{};const env=pr.envelope||{};const tax=pr.taxonomies||[];const exs=pr.exchanges||[];
+  document.getElementById('panel-exch').innerHTML=`<h3>Échanges normalisés entre agents — quelles données · quel format · quelle référence normative</h3>`+
+   `<div class="hint" style="margin-bottom:8px">Cliquez une arête du graphe (ou une carte ci-dessous) pour le contrat détaillé. Les pointillés = supervision de l'Orchestrateur vers tous les agents.</div>`+
+   `<div class="card" style="margin-bottom:10px"><h4>Enveloppe commune (portée par tout message)</h4><table class="mono" style="font-size:11px">${(env.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:10px">${esc(fl[0])}</td><td style="color:#8b949e;padding-right:10px">${esc(fl[1])}</td><td style="color:#667">${esc(fl[2])}</td></tr>`).join('')}</table><div class="hint" style="margin-top:5px">Format : ${esc(env.format||'')} · Réf : ${(env.refs||[]).join(', ')}</div></div>`+
+   `<div class="card" style="margin-bottom:10px"><h4>Taxonomies (vocabulaires fermés — valeur hors liste rejetée)</h4>${tax.map(t=>`<div class="row" style="font-size:11px"><b>${esc(t.name)}</b> : <span style="color:#c9d1d9">${esc(t.values)}</span> <span class="hint">— ${esc(t.ref)}</span></div>`).join('')}</div>`+
+   `<div class="leg">Contrats d'échange</div><div class="fleetgrid">`+
+    exs.map(e=>`<div class="fcard frow" onclick="openExchange('${e.frm}','${e.to}')"><div class="h">${esc(e.frm)} → ${esc(e.to)}</div><div style="font-size:11px;color:#c9d1d9">${esc(e.label)}</div><div class="hint">payload <b>${esc(e.payload)}</b> · ${esc(e.format)}</div><div class="hint" style="color:#58a6ff">${(e.refs||[]).join(' · ')}</div></div>`).join('')+`</div>`;}
+ if(PANEL==='tools'){const T=s.tools||[];const FN=s.tool_functions||[];
+  const ICOL={mcp:'#e879f9',sarif:'#34d399',cli:'#58a6ff',rest:'#f59e0b',lib:'#8b949e'};
+  const ACOL={Indexer:'#39c5cf',Cartographe:'#34d399',Detector:'#f59e0b',Triager:'#bc8cff',Validator:'#f85149',Reporter:'#7ee787'};
+  const byfn={};T.forEach(t=>{(byfn[t.function]=byfn[t.function]||[]).push(t);});
+  const card=t=>`<div class="fcard"><div class="h" style="display:flex;align-items:center;gap:6px">`+
+    `<a href="${t.homepage}" target="_blank" style="color:var(--ink);text-decoration:none">${esc(t.name)}</a>`+
+    `<span class="vd" style="background:${ICOL[t.integration]||'#8b949e'};color:#0b0f14">${t.integration.toUpperCase()}</span>`+
+    (t.mcp?`<span class="vd" style="border-color:#e879f9;color:#e879f9">MCP</span>`:'')+
+    (t.available===true?'<span class="inst-dot" style="background:#3fb950" title="installé localement"></span>':t.available===false?'<span class="inst-dot" style="background:#2a3340" title="non installé"></span>':'')+
+    `</div><div style="font-size:11px;color:#c9d1d9;margin:3px 0">${esc(t.task)}</div>`+
+    `<div class="hint" style="font-family:ui-monospace,Menlo,monospace">$ ${esc(t.invoke)}</div>`+
+    (t.mcp?`<div class="hint" style="margin-top:3px;color:#e879f9">via MCP : ${esc(t.mcp)}</div>`:'')+`</div>`;
+  document.getElementById('panel-tools').innerHTML=`<h3>Librairie d'outils — par FONCTION du pipeline : où ça se branche, ce que ça injecte, comment l'intégrer</h3>`+
+   `<div class="hint" style="margin-bottom:8px">Le LLM raisonne ; les outils déterministes sont des oracles. Semgrep, sqlmap… ne sont que des <b>exemples interchangeables</b> de chaque fonction. Badge = mode d'intégration (CLI · SARIF · MCP · REST · LIB) ; pastille verte = binaire détecté localement.</div>`+
+   FN.map(f=>{const tools=byfn[f.id]||[];if(!tools.length)return '';
+    return `<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:13px">${esc(f.label)}</b><span class="vd" style="background:${ACOL[f.agent]||'#8b949e'};color:#0b0f14">→ ${esc(f.agent)}</span></div>`+
+     `<div class="hint" style="margin:4px 0 8px"><b>Injecte dans le pipeline :</b> ${esc(f.feeds)}<br><b>Mode d'intégration :</b> ${esc(f.how)}</div>`+
+     `<div class="fleetgrid">${tools.map(card).join('')}</div></div>`;}).join('');}
 }
 function render(s){LAST=s;
  const F=s.findings||[];
@@ -368,7 +429,7 @@ function render(s){LAST=s;
    document.getElementById('i-log').innerHTML=(s.steplog||[]).slice().reverse().map(it=>`<div class="it ${c&&it.n===c.n?'cur':''}">${it.n}. [${it.role}] ${esc(it.title)}</div>`).join('');
    document.getElementById('b-step').disabled=!!s.done;}
  const fu=s.funnel||{};document.getElementById('outflow').textContent=`${fu.detected||cand} détectés → ${fu.true_positive||tp} confirmés → ${fu.distinct||0} distincts → ${fu.exploited||0} exploités · filtrés ${fu.false_positive||0} FP/${fu.not_applicable||0} NA/${fu.needs_review||0} NR`;
- if(OPEN&&!String(OPEN).startsWith('finding:'))renderModal();
+ if(OPEN&&!String(OPEN).startsWith('finding:')&&!String(OPEN).startsWith('exch:'))renderModal();
  if(PANEL)renderPanels(s);
 }
 async function getState(){try{return await(await fetch('/api/state')).json()}catch(e){return null}}

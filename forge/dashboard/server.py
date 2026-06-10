@@ -11,6 +11,9 @@ import json
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from ..protocol import protocol as _protocol
+from ..tools import catalog as tool_catalog
+from ..tools import functions as tool_functions
 from .flow import PAGE_FLOW
 from .page import PAGE
 
@@ -50,8 +53,22 @@ def build_snapshot(ctx) -> dict:
         "role_stats": role_stats,
         "verdicts": _verdict_counts(db),
         "sources": _all_sources(ctx),
+        "tools": tool_catalog(),
+        "tool_functions": tool_functions(),
+        "tasks_list": _tasks_list(db),
+        "protocol": _protocol(),
         **_funnel_and_priority(findings),
     }
+
+
+def _tasks_list(db) -> list[dict]:
+    """File de tâches : faites (closed), en cours (claimed), à venir (open), bloquées."""
+    rows = db.execute(
+        "SELECT task_id, title, role, state, claimed_by, priority FROM tasks "
+        "ORDER BY CASE state WHEN 'claimed' THEN 0 WHEN 'open' THEN 1 WHEN 'blocked' THEN 2 "
+        "ELSE 3 END, priority, created_ts").fetchall()
+    return [{"id": r["task_id"], "title": r["title"], "role": r["role"], "state": r["state"],
+             "by": r["claimed_by"], "priority": r["priority"]} for r in rows]
 
 
 SEV_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}

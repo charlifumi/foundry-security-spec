@@ -68,6 +68,14 @@ class StepRunner:
         snap["current"] = self.current
         snap["steplog"] = [{"n": s["n"], "stage": s["stage"], "role": s["role"],
                             "title": s["title"], "summary": s["summary"]} for s in self.log]
+        # En pas-à-pas, la file de tâches dérive du journal : faites + l'étape en cours.
+        snap["tasks_list"] = [
+            {"id": f"step-{s['n']}", "title": s["title"], "role": s["role"],
+             "by": s["role"] + "-0", "priority": s["n"],
+             "state": ("claimed" if (self.current and s["n"] == self.current["n"]
+                                      and not self.done) else "closed")}
+            for s in self.log
+        ]
         return snap
 
     # ----- enregistrement d'un pas ----------------------------------------------
