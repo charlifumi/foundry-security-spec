@@ -56,9 +56,18 @@ pre{white-space:pre-wrap;word-break:break-word;margin:4px 0;font-size:11px;color
 .slog{margin-top:14px}.slog .it{font-size:11px;color:var(--mut);padding:2px 0;border-bottom:1px solid #161b22}.slog .it.cur{color:var(--warn);font-weight:700}
 .sev-critical{border-left:3px solid var(--bad)}.sev-high{border-left:3px solid var(--warn)}.sev-medium{border-left:3px solid var(--acc)}.sev-low{border-left:3px solid var(--mut)}
 /* modal détail agent */
-.ov{position:fixed;inset:0;background:rgba(2,6,12,.6);display:none;align-items:center;justify-content:center;z-index:40}
-.modal{width:560px;max-width:92vw;max-height:86vh;overflow:auto;background:#0f1620;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.ov{position:fixed;inset:0;display:none;z-index:40;pointer-events:none}
+.modal{position:fixed;left:70px;top:100px;width:560px;max-width:92vw;max-height:80vh;overflow:auto;
+background:#0f1620;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);pointer-events:auto}
+.winhead{cursor:move;user-select:none}
 .modal .mh{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+/* widget flottant de file de tâches */
+.qwin{position:fixed;left:16px;top:300px;width:300px;max-height:60vh;overflow:auto;background:#0f1620;
+border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.5);z-index:16}
+.qhead{display:flex;align-items:center;gap:6px;padding:8px 11px;border-bottom:1px solid var(--line);font-weight:700;font-size:12px;cursor:move}
+.qhead .qx{margin-left:auto;cursor:pointer;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:0 7px;font-size:13px}
+.qbody{padding:8px 11px}.qstat{font-size:11px;margin-bottom:6px;line-height:1.7}
+.qrow{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:2px 0;border-bottom:1px solid #161b22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .modal .mh .ic{width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#0b0f14;font-weight:800}
 .modal .mh h3{margin:0;font-size:17px}.modal .mh .x{margin-left:auto;cursor:pointer;color:var(--mut);font-size:18px;border:1px solid var(--line);border-radius:6px;padding:0 9px}
 .modal .mb{padding:14px 16px}.modal .desc{color:var(--mut);font-size:13px;margin-bottom:12px}
@@ -118,7 +127,7 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Code source</span>
   <span class="pull" id="p-find" onclick="togglePanel('find')">🛡 Findings</span>
   <span class="pull" id="p-out" onclick="togglePanel('out')">📤 Sortie priorisée</span>
-  <span class="pull" id="p-tasks" onclick="togglePanel('tasks')">📋 Tâches</span>
+  <span class="pull on" id="p-tasks" onclick="toggleQueue()">📋 Widget queue</span>
   <span class="pull" id="p-exch" onclick="togglePanel('exch')">🔀 Échanges</span>
   <span class="pull" id="p-tools" onclick="togglePanel('tools')">🧰 Outils</span>
   <span style="margin-left:auto;font-size:11px;color:var(--mut)" id="outflow">—</span>
@@ -138,8 +147,9 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <div id="i-data"></div>
   <div class="slog"><h2>Journal des pas</h2><div id="i-log"></div></div>
 </aside>
-<div class="leg-flow">━ flux de données (animé) &nbsp;·&nbsp; ┄ supervision (orchestrateur → tous) &nbsp;·&nbsp; <b>cliquez une arête</b> pour le contrat d'échange normalisé</div>
-<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="leg-flow">━ flux de données (animé) &nbsp;·&nbsp; ┄ supervision (orchestrateur → tous) &nbsp;·&nbsp; <b>cliquez une arête</b> pour le contrat · <b>glissez</b> les fenêtres</div>
+<div class="qwin win" id="qwidget"><div class="qhead winhead">📋 File de tâches (live)<span class="qx" onclick="document.getElementById('qwidget').style.display='none';document.getElementById('p-tasks').classList.remove('on')">–</span></div><div class="qbody" id="qbody"></div></div>
+<div class="ov" id="ov"><div class="modal win" id="modal"></div></div>
 <script>
 const COL={operator:'#9aa5b1',orchestrator:'#58a6ff',indexer:'#39c5cf',cartographer:'#34d399',
 detector:'#f59e0b',triager:'#bc8cff',validator:'#f85149',reporter:'#7ee787',coverage:'#e879f9'};
@@ -220,7 +230,7 @@ function findingsByRole(role,F){
  if(role==='validator')return F.filter(f=>f.exploited);
  if(role==='reporter')return F.filter(f=>f.state==='published');
  return [];}
-function openModal(role){OPEN=role;renderModal();document.getElementById('ov').style.display='flex';}
+function openModal(role){OPEN=role;renderModal();document.getElementById('ov').style.display='block';}
 function closeModal(){OPEN=null;document.getElementById('ov').style.display='none';}
 document.getElementById('ov').onclick=e=>{if(e.target.id==='ov')closeModal();};
 function renderModal(){if(!OPEN||!LAST)return;const s=LAST,role=OPEN,inf=INFO[role]||{},col=COL[role];
@@ -236,7 +246,7 @@ function renderModal(){if(!OPEN||!LAST)return;const s=LAST,role=OPEN,inf=INFO[ro
  else {outHtml=`<div class="data">${(s.agents||[]).length} agents dans le fleet</div>`;}
  const claim=(s.agents||[]).find(a=>a.role===role&&a.claim);
  document.getElementById('modal').innerHTML=
-  `<div class="mh"><span class="ic" style="background:${col}">${(N[role]||{ic:'··'}).ic||'··'}</span>`+
+  `<div class="mh winhead"><span class="ic" style="background:${col}">${(N[role]||{ic:'··'}).ic||'··'}</span>`+
   `<h3 style="color:${col}">${(N[role]||{t:role}).t}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
   `<div class="mb"><div class="desc">${inf.d||''}</div>`+
   `<div class="grid2">`+
@@ -295,7 +305,7 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
   ev=`<div class="card" style="margin-top:10px"><h4>Preuve — evidence gate (3 jambes)</h4><div class="mono" style="font-size:11px">① atteignabilité : ${esc((e.reachability||{}).note||'')}<br>② frontière : ${esc((e.trust_boundary||{}).note||'')}<br>③ impact : ${esc((e.impact||{}).note||'')}</div></div>`;}
  OPEN='finding:'+fp;
  document.getElementById('modal').innerHTML=
-  `<div class="mh"><span class="ic" style="background:${col}">⚠</span><h3>${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
+  `<div class="mh winhead"><span class="ic" style="background:${col}">⚠</span><h3>${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
   `<div class="mb"><div class="verdbar"><span class="vd ${vd.c}">${vd.l}</span><span class="vd">${esc(f.severity||'')}</span>${f.exploited?'<span class="vd" style="color:#f85149;border-color:#f85149">⚡ exploité en live</span>':''}<span class="vd">${esc(f.technique||'')}</span></div>`+
    `<div class="card" style="margin-top:10px"><h4>Le problème — ${esc(ci.name)}</h4><div class="expl">${esc(ci.problem)}</div><div class="hint" style="margin-top:6px"><b>Impact :</b> ${esc(ci.impact)}</div></div>`+
    (reason?`<div class="card" style="margin-top:10px"><h4>Décision du Triager (pourquoi écarté)</h4><div class="expl">${esc(reason)}</div></div>`:'')+ev+
@@ -304,18 +314,18 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
    ((f.exploited&&f.exploit&&f.exploit.request)?`<div class="card" style="margin-top:10px"><h4>Exécution &amp; résultat observé</h4><div class="mono" style="font-size:11px"><b>Requête envoyée :</b> ${esc(f.exploit.request)}<div style="margin-top:5px"><b>Réponse du testbed (extrait) :</b></div><pre class="data" style="margin-top:3px">${esc(f.exploit.response||'')}</pre><div class="okv" style="margin-top:5px">✅ Impact observé : ${esc(f.exploit.impact||'')}</div></div></div>`:'')+
    (f.remediation?`<div class="card" style="margin-top:10px"><h4>Remédiation (règle ${esc(f.rule_id||'')})</h4><pre class="expl">${esc(f.remediation)}</pre></div>`:'')+
   `</div>`;
- document.getElementById('ov').style.display='flex';}
+ document.getElementById('ov').style.display='block';}
 function openExchange(f,t){const s=LAST;if(!s||!s.protocol)return;const ex=s.protocol.exchanges||[];
  const e=ex.find(x=>x.frm===f&&x.to===t)||ex.find(x=>x.frm===f&&(x.to==='(tous)'||x.to==='(sortie)'));
  if(!e)return;OPEN='exch:'+e.id;
  document.getElementById('modal').innerHTML=
-  `<div class="mh"><span class="ic" style="background:#58a6ff">⇄</span><h3>${esc(e.label)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
+  `<div class="mh winhead"><span class="ic" style="background:#58a6ff">⇄</span><h3>${esc(e.label)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
   `<div class="mb"><div class="verdbar"><span class="vd">${esc(e.frm)} → ${esc(e.to)}</span><span class="vd" style="border-color:#58a6ff;color:#58a6ff">payload : ${esc(e.payload)}</span></div>`+
    `<div class="card" style="margin-top:10px"><h4>Données (schéma normalisé)</h4><table class="mono" style="font-size:11.5px;width:100%">${(e.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:12px;vertical-align:top">${esc(fl[0])}</td><td style="color:#8b949e">${esc(fl[1])}</td></tr>`).join('')}</table></div>`+
    `<div class="grid2" style="margin-top:10px"><div class="card"><h4>Format</h4><div class="expl">${esc(e.format)}</div></div>`+
    `<div class="card"><h4>Références normatives</h4><div class="taglist">${(e.refs||[]).map(r=>`<span>${esc(r)}</span>`).join('')}</div></div></div>`+
   `</div>`;
- document.getElementById('ov').style.display='flex';}
+ document.getElementById('ov').style.display='block';}
 let PANEL=null,SELFILE=null;
 function togglePanel(id){const cur=PANEL===id;document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
  document.querySelectorAll('.pull').forEach(b=>b.classList.remove('on'));
@@ -431,6 +441,7 @@ function render(s){LAST=s;
  const fu=s.funnel||{};document.getElementById('outflow').textContent=`${fu.detected||cand} détectés → ${fu.true_positive||tp} confirmés → ${fu.distinct||0} distincts → ${fu.exploited||0} exploités · filtrés ${fu.false_positive||0} FP/${fu.not_applicable||0} NA/${fu.needs_review||0} NR`;
  if(OPEN&&!String(OPEN).startsWith('finding:')&&!String(OPEN).startsWith('exch:'))renderModal();
  if(PANEL)renderPanels(s);
+ renderQueue(s);
 }
 async function getState(){try{return await(await fetch('/api/state')).json()}catch(e){return null}}
 let auto=null;
@@ -438,6 +449,19 @@ async function doStep(){const s=await(await fetch('/api/step',{method:'POST'})).
 async function doReset(){stopAuto();const s=await(await fetch('/api/reset',{method:'POST'})).json();render(s);}
 function stopAuto(){if(auto){clearInterval(auto);auto=null;document.getElementById('b-play').textContent='▶';}}
 function toggleAuto(){if(auto){stopAuto();}else{document.getElementById('b-play').textContent='⏸';auto=setInterval(doStep,1300);}}
+// Fenêtres déplaçables (délégation sur les .winhead).
+let _drag=null;
+document.addEventListener('mousedown',e=>{const h=e.target.closest('.winhead');if(!h)return;const w=h.closest('.win');if(!w)return;const r=w.getBoundingClientRect();_drag={w,dx:e.clientX-r.left,dy:e.clientY-r.top};w.style.zIndex=70;e.preventDefault();});
+document.addEventListener('mousemove',e=>{if(!_drag)return;_drag.w.style.left=Math.max(0,e.clientX-_drag.dx)+'px';_drag.w.style.top=Math.max(54,e.clientY-_drag.dy)+'px';_drag.w.style.right='auto';_drag.w.style.bottom='auto';});
+document.addEventListener('mouseup',()=>{_drag=null;});
+function toggleQueue(){const w=document.getElementById('qwidget');const sh=w.style.display==='none';w.style.display=sh?'block':'none';document.getElementById('p-tasks').classList.toggle('on',sh);}
+function renderQueue(s){const TL=s.tasks_list||[];const c={claimed:0,open:0,blocked:0,closed:0};TL.forEach(t=>c[t.state]=(c[t.state]||0)+1);
+ const cur=TL.filter(t=>t.state==='claimed'),next=TL.filter(t=>t.state==='open'),bl=TL.filter(t=>t.state==='blocked');
+ document.getElementById('qbody').innerHTML=
+  `<div class="qstat"><span style="color:#d29922">⏳ ${c.claimed} en cours</span> · <span style="color:#58a6ff">📥 ${c.open} à venir</span><br><span style="color:#3fb950">✅ ${c.closed} faites</span>${c.blocked?` · <span style="color:#f85149">⛔ ${c.blocked} bloquées</span>`:''}</div>`+
+  (cur.length?`<div class="leg" style="color:#d29922">en cours</div>`+cur.map(t=>`<div class="qrow"><span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'')}</span> ${esc(t.title)} <span style="color:#3fb950">▶${esc(t.by||'')}</span></div>`).join(''):'')+
+  (next.length?`<div class="leg" style="color:#58a6ff">à venir</div>`+next.slice(0,16).map(t=>`<div class="qrow" style="opacity:.75"><span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'')}</span> ${esc(t.title)}</div>`).join('')+(next.length>16?`<div class="hint">… +${next.length-16}</div>`:''):'')+
+  (bl.length?`<div class="leg" style="color:#f85149">bloquées</div>`+bl.map(t=>`<div class="qrow" style="color:#f85149">${esc(t.title)}</div>`).join(''):'');}
 document.getElementById('b-step').onclick=doStep;document.getElementById('b-reset').onclick=doReset;document.getElementById('b-play').onclick=toggleAuto;
 addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 (async()=>{const s=await getState();if(!s)return;render(s);
