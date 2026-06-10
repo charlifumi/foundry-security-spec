@@ -301,6 +301,9 @@ function renderData(cur){if(!cur)return '';const d=cur.data||{};let h='';
    if(d.poc)h+=`<div class="leg">exploit code generated AND executed</div><pre class="data mono">${esc(d.poc)}</pre>`;
    if(d.trace&&d.trace.request)h+=`<div class="leg">observed execution</div><div class="data mono"><b>Request:</b> ${esc(d.trace.request)}<br><b>Response:</b><pre class="data" style="margin-top:3px">${esc(d.trace.response||'')}</pre><span class="okv">✅ ${esc(d.trace.impact||'')}</span></div>`;}
  if(d.published)h+=`<div class="leg">published findings</div><div class="data">${d.published.map(p=>`<div class="row mono sev-${p.severity}">${esc(p.cwe)} ${esc(p.symbol)} [${esc(p.severity)}]${p.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')}</div>`;
+ if(d.variants){h+=`<div class="leg">Variant-Hunter — same pattern elsewhere in the target</div>`+d.variants.map(v=>`<div class="data mono" style="font-size:11px"><b>${esc(v.cwe)}</b> (origin ${esc(v.origin)}): `+v.variants.map(x=>`${x.already?'<span style=color:#8b949e>•'+esc(x.symbol)+'</span>':'<span class=badv>＋'+esc(x.symbol)+'</span>'}`).join(' \u00b7 ')+`</div>`).join('');}
+ if(d.attack){h+=`<div class="leg">Attack-Mapper — privilege graph (entry → capability → goal)</div>`+d.attack.paths.map(pp=>`<div class="row mono" style="font-size:11px"><span style="color:#8b949e">${esc(pp.entry)}</span> → <span class=badv>${esc(pp.capability)}</span> → <span class=okv>${esc(pp.goal)}</span></div>`).join('');}
+ if(d.patches){h+=`<div class="leg">Remediator — generated & verified patches</div>`+d.patches.map(x=>`<div class="row mono" style="font-size:11px">${x.verified?'<span class=okv>\u2713 verified</span>':'<span class=badv>\u26A0 needs review</span>'} ${esc(x.cwe)} <b>${esc(x.symbol)}</b></div>`).join('');}
  return h;}
 
 const CWE_INFO={
@@ -484,6 +487,7 @@ function render(s){LAST=s;
  setbd('triager',`<span class="big">${tp}</span> confirmed TP<div class="verdbar"><span class="vd fp">${vv['false-positive']||0} FP</span><span class="vd na">${vv['not-applicable']||0} NA</span><span class="vd nr">${vv['needs-review']||0} NR</span></div>`,tp>0,cur('triager'));
  setbd('validator',`testbed · <span class="big">${exploited}</span> ⚡ exploited`,exploited>0,cur('validator'));
  setbd('reporter',`<span class="big">${(s.funnel||{}).distinct||pub}</span> distinct<div class="verdbar"><span class="vd tp">${(s.funnel||{}).exploited||0} ⚡ proven</span><span class="vd">${pub} published</span></div>`,pub>0,cur('reporter'));
+ (typeof EXTN!=='undefined'?EXTN:[]).forEach(x=>{const nd=document.getElementById('x-'+x.id);if(nd)nd.classList.toggle('cur',s.active_role===x.id);});
  setbd('coverage',`${covDone}/${cov.length} covered<div class="chips"><span class="chip">${corp}</span></div>`,s.coverage_complete,cur('coverage'));
  if(s.mode==='step'){document.getElementById('ctrl').style.display='inline-flex';
    document.getElementById('insp').style.display='block';document.getElementById('stage').classList.add('insp-on');

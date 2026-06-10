@@ -12,8 +12,8 @@ from __future__ import annotations
 import json
 import os
 
-from .agents import (cartographer, coverage_guide, detector, indexer, reporter,
-                     triager, validator)
+from .agents import (cartographer, coverage_guide, detector, extensions, indexer,
+                     reporter, triager, validator)
 from .dashboard.server import build_snapshot
 from .orchestrator import setup
 
@@ -195,6 +195,23 @@ class StepRunner:
                  {"published": [{"cwe": f["cwe"], "symbol": f["symbol"], "severity": f["severity"],
                                  "exploited": bool(f["exploited"])} for f in tps]},
                  ["validator", "reporter"])
+        yield
+
+        # --- Extension roles (§6) — invoked to show their contribution ---
+        vh = extensions.variant_hunt(ctx)
+        self._mk("variant-hunt", "variant-hunter", "Variant-Hunter · same-pattern search",
+                 f"{sum(len(v['variants']) for v in vh)} locations across {len(vh)} class(es)",
+                 {"variants": vh}, ["triager", "variant-hunter"])
+        yield
+        am = extensions.attack_map(ctx)
+        self._mk("attack-map", "attack-mapper", "Attack-Mapper · privilege graph",
+                 f"{len(am['paths'])} attack path(s) to {len(am['goals'])} goal(s)",
+                 {"attack": am}, ["reporter", "attack-mapper"])
+        yield
+        rm = extensions.remediate(ctx)
+        self._mk("remediate", "remediator", "Remediator · generate & verify patches",
+                 f"{len(rm)} patches, {sum(1 for x in rm if x['verified'])} verified",
+                 {"patches": rm}, ["reporter", "remediator"])
         yield
 
 
