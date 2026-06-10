@@ -113,18 +113,27 @@ def run(cfg: dict, *, on_ready=None, max_seconds: float = 120.0) -> Context:
 
     # Supervision : reclaim, couverture, halt, complétion.
     deadline = time.time() + max_seconds
+    conn = ctx.db.connect()
     while time.time() < deadline:
         ctx.queue.reclaim_expired()                    # FR-096 : claims morts
+        # Auto-réparation : une tâche bloquée par des échecs transitoires (contention) est
+        # ré-ouverte pour être retentée — évite de tronquer silencieusement la sortie.
+        conn.execute("UPDATE tasks SET state='open', claimed_by=NULL, release_count=0 "
+                     "WHERE state='blocked'")
         coverage_guide.review(ctx)                     # FR-069/071
         halt = ctx.budget.should_halt(ctx.coverage_complete.is_set())  # FR-116
         pending = ctx.queue.open_count("main")
+        untriaged = conn.execute(
+            "SELECT COUNT(*) c FROM findings WHERE verdict IS NULL").fetchone()["c"]
         if halt:
             ctx.events.emit("halt", reason=halt)
             break
-        if pending == 0 and ctx.coverage_complete.is_set():
-            ctx.events.emit("done", reason="couverture complète + files drainées")
+        # Terminé seulement quand tout est drainé, la couverture complète, ET aucun candidat
+        # ne reste non trié (sortie complète garantie, déterministe).
+        if pending == 0 and untriaged == 0 and ctx.coverage_complete.is_set():
+            ctx.events.emit("done", reason="couverture complète + tout trié")
             break
-        time.sleep(0.2)
+        time.sleep(0.15)
 
     ctx.stop.set()                                     # drain (FR-006)
     for w in workers:

@@ -50,6 +50,55 @@ def build_snapshot(ctx) -> dict:
         "role_stats": role_stats,
         "verdicts": _verdict_counts(db),
         "sources": _all_sources(ctx),
+        **_funnel_and_priority(findings),
+    }
+
+
+SEV_RANK = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+
+
+def _funnel_and_priority(findings) -> dict:
+    """Entonnoir (détectés→confirmés→distincts→exploités) + sortie dédupliquée et priorisée."""
+    vc = {}
+    for f in findings:
+        vc[f["verdict"]] = vc.get(f["verdict"], 0) + 1
+    tps = [f for f in findings if f["verdict"] == "true-positive"]
+
+    # Déduplication par localisation (file, symbol) : la fédération de règles peut flaguer
+    # deux fois la même faiblesse (ex. CWE-327 générique + CWE-916 spécialisée).
+    groups: dict = {}
+    for f in tps:
+        key = f"{f['file']}::{f['symbol']}"
+        g = groups.setdefault(key, {"file": f["file"], "symbol": f["symbol"],
+                                    "cwes": set(), "rules": set(), "fps": [],
+                                    "exploited": False, "severity": "low", "title": f["title"]})
+        g["cwes"].add(f["cwe"])
+        if f.get("rule_id"):
+            g["rules"].add(f["rule_id"])
+        g["fps"].append(f["fp"])
+        g["exploited"] = g["exploited"] or f["exploited"]
+        if SEV_RANK.get(f["severity"], 3) < SEV_RANK.get(g["severity"], 3):
+            g["severity"] = f["severity"]
+
+    priority = [{"file": g["file"], "symbol": g["symbol"], "cwes": sorted(g["cwes"]),
+                 "rules": sorted(g["rules"]), "fps": g["fps"], "exploited": g["exploited"],
+                 "severity": g["severity"], "title": g["title"], "dup": len(g["fps"]) > 1}
+                for g in groups.values()]
+    # priorisation : exploités d'abord, puis par sévérité, puis par classe
+    priority.sort(key=lambda x: (0 if x["exploited"] else 1, SEV_RANK.get(x["severity"], 3),
+                                 x["cwes"][0] if x["cwes"] else ""))
+    return {
+        "funnel": {
+            "detected": len(findings),
+            "true_positive": len(tps),
+            "distinct": len(groups),
+            "duplicates": len(tps) - len(groups),
+            "exploited": sum(1 for g in priority if g["exploited"]),
+            "false_positive": vc.get("false-positive", 0),
+            "not_applicable": vc.get("not-applicable", 0),
+            "needs_review": vc.get("needs-review", 0),
+        },
+        "priority": priority,
     }
 
 

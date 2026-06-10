@@ -92,6 +92,10 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 .vd.tp{color:#0b0f14;background:var(--ok)}.vd.fp{color:var(--mut)}.vd.na{color:var(--mut)}.vd.nr{color:var(--warn);border-color:var(--warn)}
 .frow{cursor:pointer}.frow:hover{outline:1px solid var(--acc)}
 .expl{font-size:12px;color:#c9d1d9;line-height:1.5}
+.funnel{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fstage{background:#0f1620;border:1px solid var(--line);border-radius:10px;padding:8px 16px;text-align:center;min-width:86px}
+.fstage .fn{font-size:24px;font-weight:800}.fstage .fl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+.farrow{color:var(--mut);font-size:14px;text-align:center;padding:0 2px}.farrow .fd{font-size:9.5px;color:var(--bad)}
 </style></head><body>
 <header>
   <h1><b>FORGE</b> · pipeline</h1>
@@ -111,12 +115,14 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <span class="pull" id="p-fleet" onclick="togglePanel('fleet')">👥 Fleet</span>
   <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Code source</span>
   <span class="pull" id="p-find" onclick="togglePanel('find')">🛡 Findings</span>
+  <span class="pull" id="p-out" onclick="togglePanel('out')">📤 Sortie priorisée</span>
   <span style="margin-left:auto;font-size:11px;color:var(--mut)" id="outflow">—</span>
 </div>
 <div class="panel" id="panel-res"></div>
 <div class="panel" id="panel-fleet"></div>
 <div class="panel" id="panel-code"></div>
 <div class="panel" id="panel-find"></div>
+<div class="panel" id="panel-out"></div>
 <div class="stage" id="stage"><div class="canvas" id="cv"><svg class="edges" id="svg" viewBox="0 0 1520 660"></svg></div></div>
 <aside class="insp" id="insp">
   <h2>Inspecteur — donnée du pas courant</h2>
@@ -305,6 +311,18 @@ function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
    ['true-positive','false-positive','not-applicable','needs-review'].map(v=>{const l=byv[v]||[];if(!l.length)return '';const vd=VERD[v];
     return `<div style="margin-bottom:8px"><span class="vd ${vd.c}">${vd.l} (${l.length})</span><div style="margin-top:5px">`+
      l.map(f=>`<div class="row mono frow sev-${f.severity||'low'}" onclick="openFinding('${f.fp}')">${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)} <span style="color:#8b949e">(${esc(f.file)})</span>${f.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')+`</div></div>`;}).join('');}
+ if(PANEL==='out'){const fu=s.funnel||{};const pr=s.priority||[];
+  const proven=pr.filter(g=>g.exploited),conf=pr.filter(g=>!g.exploited);
+  const stg=(n,l,c)=>`<div class="fstage"><div class="fn" style="color:${c}">${n==null?'—':n}</div><div class="fl">${l}</div></div>`;
+  const arr=t=>`<div class="farrow">▶<div class="fd">${t}</div></div>`;
+  const row=g=>`<div class="row mono frow sev-${g.severity}" onclick="openFinding('${g.fps[0]}')">${g.exploited?'<span class=badv>⚡</span> ':''}${esc(g.cwes.join('/'))} · <b>${esc(g.symbol)}</b> <span style="color:#8b949e">(${esc(g.file)})</span>${g.dup?` <span class="chip" style="background:${COL.detector};color:#0b0f14">×${g.fps.length} règles</span>`:''}</div>`;
+  document.getElementById('panel-out').innerHTML=`<h3>Sortie — entonnoir de pertinence &amp; liste priorisée par exploitation réelle</h3>`+
+   `<div class="funnel">`+stg(fu.detected,'détectés','#79c0ff')+arr(`−${fu.false_positive||0} FP · −${fu.not_applicable||0} NA · −${fu.needs_review||0} NR`)+
+    stg(fu.true_positive,'confirmés','#bc8cff')+arr(`−${fu.duplicates||0} doublons`)+
+    stg(fu.distinct,'distincts','#34d399')+arr(`${(fu.distinct||0)-(fu.exploited||0)} non démontrés`)+
+    stg(fu.exploited,'exploités','#f85149')+`</div>`+
+   `<div class="grid2" style="margin-top:12px"><div class="card"><h4>⚡ Tier 1 — prouvés en live (prioritaires)</h4>${proven.map(row).join('')||'<span class=hint>—</span>'}</div>`+
+   `<div class="card"><h4>✓ Tier 2 — confirmés, non démontrés en live (présence = vuln)</h4>${conf.map(row).join('')||'<span class=hint>—</span>'}</div></div>`;}
 }
 function render(s){LAST=s;
  const F=s.findings||[];
@@ -335,7 +353,7 @@ function render(s){LAST=s;
  const vv=s.verdicts||{};
  setbd('triager',`<span class="big">${tp}</span> TP confirmés<div class="verdbar"><span class="vd fp">${vv['false-positive']||0} FP</span><span class="vd na">${vv['not-applicable']||0} NA</span><span class="vd nr">${vv['needs-review']||0} NR</span></div>`,tp>0,cur('triager'));
  setbd('validator',`testbed · <span class="big">${exploited}</span> ⚡ exploités`,exploited>0,cur('validator'));
- setbd('reporter',`<span class="big">${pub}</span> rapports publiés`,pub>0,cur('reporter'));
+ setbd('reporter',`<span class="big">${(s.funnel||{}).distinct||pub}</span> distincts<div class="verdbar"><span class="vd tp">${(s.funnel||{}).exploited||0} ⚡ prouvés</span><span class="vd">${pub} publiés</span></div>`,pub>0,cur('reporter'));
  setbd('coverage',`${covDone}/${cov.length} couverts<div class="chips"><span class="chip">${corp}</span></div>`,s.coverage_complete,cur('coverage'));
  if(s.mode==='step'){document.getElementById('ctrl').style.display='inline-flex';
    document.getElementById('insp').style.display='block';document.getElementById('stage').classList.add('insp-on');
@@ -345,7 +363,7 @@ function render(s){LAST=s;
    document.getElementById('i-data').innerHTML=renderData(c);
    document.getElementById('i-log').innerHTML=(s.steplog||[]).slice().reverse().map(it=>`<div class="it ${c&&it.n===c.n?'cur':''}">${it.n}. [${it.role}] ${esc(it.title)}</div>`).join('');
    document.getElementById('b-step').disabled=!!s.done;}
- document.getElementById('outflow').textContent=`sortie : ${pub} publiés / ${cand} détectés · filtrés : ${(vv['false-positive']||0)} FP · ${(vv['not-applicable']||0)} NA · ${(vv['needs-review']||0)} NR`;
+ const fu=s.funnel||{};document.getElementById('outflow').textContent=`${fu.detected||cand} détectés → ${fu.true_positive||tp} confirmés → ${fu.distinct||0} distincts → ${fu.exploited||0} exploités · filtrés ${fu.false_positive||0} FP/${fu.not_applicable||0} NA/${fu.needs_review||0} NR`;
  if(OPEN&&!String(OPEN).startsWith('finding:'))renderModal();
  if(PANEL)renderPanels(s);
 }
