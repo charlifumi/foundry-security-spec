@@ -35,6 +35,8 @@ background:#0f1620;box-shadow:0 6px 18px rgba(0,0,0,.35);overflow:hidden;cursor:
 .node.cur{box-shadow:0 0 0 2px var(--warn),0 0 26px rgba(210,153,34,.5);transform:scale(1.04);z-index:5}
 .node.ext{opacity:.85;background:#0c1118;border:1px dashed #44505e;border-top:3px dashed #8b949e}
 .node.ext .bd{color:#7d8794;font-style:italic}
+.node.ext.done{opacity:1;border:1px solid #5b6673;border-top:3px solid #8b949e}
+.node.ext.done .bd{color:#aab4c0;font-style:normal}
 .node .hd{display:flex;align-items:center;gap:7px;padding:7px 9px;font-weight:700;font-size:12.5px;border-bottom:1px solid var(--line)}
 .node .ic{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#0b0f14;font-weight:800}
 .node .inst{margin-left:auto;font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:#0b0f14;border:1px solid var(--line);color:var(--mut)}
@@ -233,7 +235,7 @@ for(const x of EXTN){const a=N[x.anchor];
  pa.setAttribute('d',`M ${a.x+NW/2} ${a.y+NH} C ${a.x+NW/2} ${a.y+NH+40}, ${x.x+NW/2} ${x.y-40}, ${x.x+NW/2} ${x.y}`);
  pa.setAttribute('fill','none');pa.setAttribute('stroke','#5b6673');pa.setAttribute('stroke-width','1.4');pa.setAttribute('stroke-dasharray','4 5');pa.setAttribute('opacity','0.55');svg.appendChild(pa);
  const d=document.createElement('div');d.className='node ext';d.id='x-'+x.id;d.style.left=x.x+'px';d.style.top=x.y+'px';
- d.innerHTML=`<div class="hd"><span class="ic" style="background:#8b949e">${x.ic}</span><span style="color:#aab4c0">${x.t}</span><span class="inst" style="border-color:#5b6673">\u00A76 EXT</span></div><div class="bd">extension role \u00B7 not in core</div>`;
+ d.innerHTML=`<div class="hd"><span class="ic" style="background:#8b949e">${x.ic}</span><span style="color:#aab4c0">${x.t}</span><span class="inst" style="border-color:#5b6673">\u00A76 EXT</span></div><div class="bd" id="xbd-${x.id}">extension role \u00B7 not in core</div>`;
  d.onclick=()=>openExt(x.id);cv.appendChild(d);EXTN_BYID[x.id]=x;}
 let STATE={cand:0,tp:0,exploited:0,exploitableTP:0,covOpen:0,covDone:false},CUR_EDGE=null,LAST=null,OPEN=null;
 function frame(ts){for(const ep of EP){let act=ep.e.k(STATE)||0;
@@ -344,8 +346,13 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
    ((f.fix&&f.fix.safe_code)?`<div class="card" style="margin-top:10px"><h4 style="color:#3fb950">🛠 Fix proposal — safe code</h4><div class="hint" style="margin-bottom:6px">${(f.fix.steps||[]).map(x=>'• '+esc(x)).join('<br>')}</div><pre class="data mono" style="border-color:#3fb950">${esc(f.fix.safe_code)}</pre></div>`:'')+
   `</div>`;
  document.getElementById('ov').style.display='block';}
+function _extData(id){const ex=(LAST&&LAST.extensions)||{};
+ if(id==='variant-hunter'&&ex.variants)return `<div class="card" style="margin-top:10px"><h4>Same-pattern locations (Variant-Hunter)</h4>`+ex.variants.map(v=>`<div class="mono" style="font-size:11px"><b>${esc(v.cwe)}</b> (origin ${esc(v.origin)}): `+(v.variants||[]).map(z=>esc(z.symbol)+(z.already?'':' <span class=badv>＋new</span>')).join(', ')+`</div>`).join('')+`</div>`;
+ if(id==='attack-mapper'&&ex.attack)return `<div class="card" style="margin-top:10px"><h4>Privilege graph (entry → capability → goal)</h4>`+(ex.attack.paths||[]).map(pp=>`<div class="mono" style="font-size:11px"><span style="color:#8b949e">${esc(pp.entry)}</span> → <span class=badv>${esc(pp.capability)}</span> → <span class=okv>${esc(pp.goal)}</span></div>`).join('')+`</div>`;
+ if(id==='remediator'&&ex.patches)return `<div class="card" style="margin-top:10px"><h4>Generated & verified patches</h4>`+ex.patches.map(pp=>`<div class="mono" style="font-size:11px">${pp.verified?'<span class=okv>✓ verified</span>':'<span class=badv>⚠ needs review</span>'} ${esc(pp.cwe)} <b>${esc(pp.symbol)}</b></div>`).join('')+`</div>`;
+ return '';}
 function openExt(id){const x=EXTN_BYID[id];if(!x)return;OPEN='ext:'+id;
- document.getElementById('modal').innerHTML=`<div class="mh winhead"><span class="ic" style="background:#8b949e">${x.ic}</span><h3>${esc(x.t)} <span class="vd" style="border-color:#8b949e;color:#8b949e">extension \u00A76</span></h3><span class="x" onclick="closeModal()">\u2715</span></div><div class="mb"><div class="expl">${esc(x.desc)}</div><div class="hint" style="margin-top:8px">Described in spec.md \u00A74.3 / \u00A76 (extension role, not specified with FRs). Build after the eight core roles produce trustworthy findings.</div><div class="hint">Plugs in at: <b>${esc(x.anchor)}</b>.</div></div>`;
+ document.getElementById('modal').innerHTML=`<div class="mh winhead"><span class="ic" style="background:#8b949e">${x.ic}</span><h3>${esc(x.t)} <span class="vd" style="border-color:#8b949e;color:#8b949e">extension \u00A76</span></h3><span class="x" onclick="closeModal()">\u2715</span></div><div class="mb"><div class="expl">${esc(x.desc)}</div><div class="hint" style="margin-top:8px">Described in spec.md \u00A74.3 / \u00A76 (extension role, not specified with FRs). Build after the eight core roles produce trustworthy findings.</div><div class="hint">Plugs in at: <b>${esc(x.anchor)}</b>.</div>${_extData(id)}</div>`;
  document.getElementById('ov').style.display='block';}
 function openExchange(f,t){const s=LAST;if(!s||!s.protocol)return;const ex=s.protocol.exchanges||[];
  const e=ex.find(x=>x.frm===f&&x.to===t)||ex.find(x=>x.frm===f&&(x.to==='(all)'||x.to==='(output)'));
@@ -487,7 +494,12 @@ function render(s){LAST=s;
  setbd('triager',`<span class="big">${tp}</span> confirmed TP<div class="verdbar"><span class="vd fp">${vv['false-positive']||0} FP</span><span class="vd na">${vv['not-applicable']||0} NA</span><span class="vd nr">${vv['needs-review']||0} NR</span></div>`,tp>0,cur('triager'));
  setbd('validator',`testbed · <span class="big">${exploited}</span> ⚡ exploited`,exploited>0,cur('validator'));
  setbd('reporter',`<span class="big">${(s.funnel||{}).distinct||pub}</span> distinct<div class="verdbar"><span class="vd tp">${(s.funnel||{}).exploited||0} ⚡ proven</span><span class="vd">${pub} published</span></div>`,pub>0,cur('reporter'));
- (typeof EXTN!=='undefined'?EXTN:[]).forEach(x=>{const nd=document.getElementById('x-'+x.id);if(nd)nd.classList.toggle('cur',s.active_role===x.id);});
+ (typeof EXTN!=='undefined'?EXTN:[]).forEach(x=>{const nd=document.getElementById('x-'+x.id);const bd=document.getElementById('xbd-'+x.id);const ex=s.extensions||{};
+  let txt='extension role · not in core',done=false;
+  if(x.id==='variant-hunter'&&ex.variants){const n=ex.variants.reduce((a,v)=>a+(v.variants?v.variants.length:0),0);txt=n+' variant locations';done=true;}
+  else if(x.id==='attack-mapper'&&ex.attack){txt=(ex.attack.paths||[]).length+' attack paths';done=true;}
+  else if(x.id==='remediator'&&ex.patches){const v=ex.patches.filter(pp=>pp.verified).length;txt=ex.patches.length+' patches · '+v+' verified';done=true;}
+  if(bd)bd.textContent=txt; if(nd){nd.classList.toggle('cur',s.active_role===x.id);nd.classList.toggle('done',done);}});
  setbd('coverage',`${covDone}/${cov.length} covered<div class="chips"><span class="chip">${corp}</span></div>`,s.coverage_complete,cur('coverage'));
  if(s.mode==='step'){document.getElementById('ctrl').style.display='inline-flex';
    document.getElementById('insp').style.display='block';document.getElementById('stage').classList.add('insp-on');

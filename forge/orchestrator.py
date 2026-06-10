@@ -139,5 +139,13 @@ def run(cfg: dict, *, on_ready=None, max_seconds: float = 120.0) -> Context:
     for w in workers:
         w.join(timeout=3)
     reporter.write_rollup(ctx)
+    # Rôles d'extension (§6) — exécutés après le pipeline core pour montrer leur apport.
+    from .agents import extensions as _ext
+    ctx.extensions = {"variants": _ext.variant_hunt(ctx), "attack": _ext.attack_map(ctx),
+                      "patches": _ext.remediate(ctx)}
+    ctx.events.emit("extensions_done",
+                    variants=sum(len(v['variants']) for v in ctx.extensions['variants']),
+                    attack_paths=len(ctx.extensions['attack']['paths']),
+                    patches=len(ctx.extensions['patches']))
     ctx.events.emit("shutdown", run_id=run_id)
     return ctx

@@ -30,6 +30,7 @@ class Context:
     testbed_url: str | None = None
     coverage_complete: threading.Event = field(default_factory=threading.Event)
     stop: threading.Event = field(default_factory=threading.Event)
+    extensions: dict = field(default_factory=dict)
 
 
 class Worker(threading.Thread):

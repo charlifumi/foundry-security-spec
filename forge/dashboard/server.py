@@ -60,6 +60,7 @@ def build_snapshot(ctx) -> dict:
         "tasks_list": _tasks_list(db),
         "protocol": _protocol(),
         "user_stories": _user_stories(),
+        "extensions": getattr(ctx, "extensions", {}) or {},
         **_funnel_and_priority(findings),
     }
 
