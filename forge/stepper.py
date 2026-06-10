@@ -16,6 +16,7 @@ from .agents import (cartographer, coverage_guide, detector, extensions, indexer
                      reporter, triager, validator)
 from .dashboard.server import build_snapshot
 from .orchestrator import setup
+from .userstories import USER_STORIES
 
 
 class StepRunner:
@@ -88,6 +89,16 @@ class StepRunner:
     # ----- la séquence ----------------------------------------------------------
     def _steps(self):
         ctx = self.ctx
+        self._mk("operator", "operator", "Operator — set the mission & read the playbook",
+                 "The operator states the goals and consults the user stories to know what to ask for.",
+                 {"goals": ctx.config.get("goals", ""), "stories": USER_STORIES[:6]},
+                 ["operator", "orchestrator"])
+        yield
+        self._mk("orchestrator", "orchestrator", "Orchestrator — validate config & stand up the fleet",
+                 "Single operator surface: validates forge.yaml, mounts the substrate, prepares to spawn agents.",
+                 {"substrate": ["work queue", "finding store", "budget", "sandbox", "dashboard"]},
+                 ["operator", "orchestrator"])
+        yield
         self._mk("testbed", "orchestrator", "Testbed started",
                  f"VulnShop listening on {ctx.testbed_url}", {"testbed_url": ctx.testbed_url},
                  ["operator", "orchestrator"])

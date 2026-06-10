@@ -233,15 +233,17 @@ def _state(db, key):
 
 
 class LiveController:
-    """Mode live : le pipeline tourne en fond, le dashboard observe (step/reset = no-op)."""
+    """Mode live : le pipeline tourne en fond, le dashboard observe."""
     mode = "live"
 
     def __init__(self, ctx):
         self.ctx = ctx
+        self.last_report = None
 
     def snapshot(self):
         s = build_snapshot(self.ctx)
         s["mode"] = "live"
+        s["last_report"] = bool(self.last_report)
         return s
 
     def step(self):
@@ -249,6 +251,42 @@ class LiveController:
 
     def reset(self):
         return self.snapshot()
+
+    def report(self):
+        from ..report import generate_report
+        self.last_report = generate_report(self.ctx)
+        return {"ok": True, "url": "/report", "path": self.last_report}
+
+    def run_target(self, params):
+        import os
+        import subprocess
+        import tempfile
+        import threading
+        import time as _t
+        from .. import config as cfgmod
+        from .. import orchestrator
+        src, git = params.get("source"), params.get("git")
+        if git:
+            d = tempfile.mkdtemp(prefix="forge-repo-")
+            try:
+                subprocess.run(["git", "clone", "--depth", "1", git, d],
+                               check=True, capture_output=True, timeout=180)
+            except Exception as e:  # noqa: BLE001
+                return {"ok": False, "error": f"clone failed: {e}"}
+            src = d
+        if not src or not os.path.isdir(src):
+            return {"ok": False, "error": "invalid source path"}
+        cfg = cfgmod.default_config()
+        cfg["target"]["source"] = os.path.abspath(src)
+        cfg["testbed"]["enabled"] = False  # arbitrary repo: static analysis only (no live exploit)
+        threading.Thread(target=lambda: orchestrator.run(cfg, max_seconds=120), daemon=True).start()
+        for _ in range(120):
+            if orchestrator.ACTIVE is not None and orchestrator.ACTIVE is not self.ctx:
+                self.ctx = orchestrator.ACTIVE
+                self.last_report = None
+                break
+            _t.sleep(0.05)
+        return {"ok": True, "source": cfg["target"]["source"]}
 
 
 def serve(controller, host="127.0.0.1", port=8000, *, block=True):
@@ -281,14 +319,34 @@ def serve(controller, host="127.0.0.1", port=8000, *, block=True):
                 _json(self, controller.snapshot())
             elif self.path.startswith("/panels"):
                 _html(self, PAGE)
+            elif self.path.startswith("/report"):
+                pth = getattr(controller, "last_report", None)
+                if pth and __import__("os").path.exists(pth):
+                    _html(self, open(pth, encoding="utf-8").read())
+                else:
+                    self.send_response(404); self.end_headers()
             else:
                 _html(self, PAGE_FLOW)
+
+        def _body(self):
+            import json as _j
+            n = int(self.headers.get("Content-Length", 0) or 0)
+            try:
+                return _j.loads(self.rfile.read(n) or b"{}")
+            except ValueError:
+                return {}
 
         def do_POST(self):
             if self.path.startswith("/api/step"):
                 _json(self, controller.step())
             elif self.path.startswith("/api/reset"):
                 _json(self, controller.reset())
+            elif self.path.startswith("/api/run"):
+                _json(self, controller.run_target(self._body())
+                      if hasattr(controller, "run_target") else {"ok": False, "error": "n/a in step mode"})
+            elif self.path.startswith("/api/report"):
+                _json(self, controller.report() if hasattr(controller, "report")
+                      else {"ok": False})
             else:
                 self.send_response(404)
                 self.end_headers()

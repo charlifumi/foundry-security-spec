@@ -73,6 +73,12 @@ border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,
 .qbody{padding:8px 11px}.qstat{font-size:11px;margin-bottom:6px;line-height:1.7}
 .qrow{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:2px 0;border-bottom:1px solid #161b22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qrow.qcur{background:rgba(210,153,34,.14)}
+.narr{position:fixed;left:50%;top:96px;transform:translateX(-50%);width:600px;max-width:92vw;background:#0f1620;border:1px solid var(--acc);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.6);z-index:30}
+.nhead{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px;color:var(--mut);cursor:move}
+.nbody{padding:16px 18px}.ntitle{font-size:22px;font-weight:800;margin-bottom:8px}.ntext{font-size:15px;line-height:1.6;color:#dbe4ee}
+.nsum{margin-top:10px;font-size:12px;color:var(--mut);font-family:ui-monospace,Menlo,monospace}
+.nfoot{padding:10px 18px 16px;text-align:right}.nbig{font-size:16px;font-weight:800;padding:9px 22px;color:#0b0f14;background:var(--acc);border:none;border-radius:10px;cursor:pointer}
+.tgtgrp{display:none;align-items:center;gap:6px}.tgtin{background:#0d1117;border:1px solid var(--line);border-radius:7px;color:var(--ink);padding:4px 8px;font-size:12px;width:220px}
 .modal .mh .ic{width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#0b0f14;font-weight:800}
 .modal .mh h3{margin:0;font-size:17px}.modal .mh .x{margin-left:auto;cursor:pointer;color:var(--mut);font-size:18px;border:1px solid var(--line);border-radius:6px;padding:0 9px}
 .modal .mb{padding:14px 16px}.modal .desc{color:var(--mut);font-size:13px;margin-bottom:12px}
@@ -138,6 +144,7 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <span class="pull" id="p-tools" onclick="togglePanel('tools')">🧰 Tools</span>
   <span class="pull" id="p-fixes" onclick="togglePanel('fixes')">🛠 Fixes</span>
   <span class="pull" id="p-stories" onclick="togglePanel('stories')">📖 Stories</span>
+  <span class="tgtgrp" id="tgtgrp"><input class="tgtin" id="tgt" placeholder="repo path or git URL…"><button class="btn" onclick="analyzeTarget()">▶ Analyze</button><button class="btn" onclick="genReport()">📄 Report</button><span class="hint" id="tgt-msg"></span></span>
   <span style="margin-left:auto;font-size:11px;color:var(--mut)" id="outflow">—</span>
 </div>
 <div class="panel" id="panel-res"></div>
@@ -160,6 +167,7 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 </aside>
 <div class="leg-flow">━ data flow (animated) &nbsp;·&nbsp; ┄ supervision (orchestrator → all) &nbsp;·&nbsp; <b>click an edge</b> for its exchange contract · <b>drag</b> the windows · ┈ extension roles (§6)</div>
 <div class="qwin win" id="qwidget"><div class="qhead winhead">📋 Task queue (live)<span class="qx" onclick="document.getElementById('qwidget').style.display='none';document.getElementById('p-tasks').classList.remove('on')">–</span></div><div class="qbody" id="qbody"></div></div>
+<div class="narr win" id="narrator" style="display:none"><div class="nhead winhead"><span id="n-role"></span><span style="margin-left:auto;font-size:11px">step-by-step narration</span><span class="qx" style="cursor:pointer;margin-left:8px" onclick="document.getElementById('narrator').style.display='none'">–</span></div><div class="nbody"><div class="ntitle" id="n-title">—</div><div class="ntext" id="n-text"></div><div class="nsum" id="n-sum"></div></div><div class="nfoot"><button class="nbig" id="n-next">NEXT ▶</button></div></div>
 <div class="ov" id="ov"><div class="modal win" id="modal"></div></div>
 <script>
 const COL={operator:'#9aa5b1',orchestrator:'#58a6ff',indexer:'#39c5cf',cartographer:'#34d399',
@@ -508,13 +516,43 @@ function render(s){LAST=s;
    document.getElementById('i-sum').textContent=c?c.summary:'Click ⏭ to start.';
    document.getElementById('i-data').innerHTML=renderData(c);
    document.getElementById('i-log').innerHTML=(s.steplog||[]).slice().reverse().map(it=>`<div class="it ${c&&it.n===c.n?'cur':''}">${it.n}. [${it.role}] ${esc(it.title)}</div>`).join('');
-   document.getElementById('b-step').disabled=!!s.done;}
+   document.getElementById('b-step').disabled=!!s.done;
+   const NA=NARR[c?c.stage:'']||{t:(c?c.title:'—'),x:(c?c.summary:'')};
+   document.getElementById('narrator').style.display='block';
+   document.getElementById('n-role').innerHTML=`<span style="display:inline-block;width:16px;height:16px;border-radius:5px;background:${COL[c?c.role:'operator']||'#8b949e'};vertical-align:middle"></span> <b style="color:${COL[c?c.role:'operator']||'#8b949e'}">${esc(c?c.role:'')}</b> · step ${c?c.n:0}`;
+   document.getElementById('n-title').textContent=NA.t;
+   document.getElementById('n-text').textContent=NA.x;
+   document.getElementById('n-sum').textContent=c?c.summary:'';
+   const tg0=document.getElementById('tgtgrp');if(tg0)tg0.style.display='none';
+ }else{const nr=document.getElementById('narrator');if(nr)nr.style.display='none';const tg=document.getElementById('tgtgrp');if(tg)tg.style.display='flex';}
  const fu=s.funnel||{};document.getElementById('outflow').textContent=`${fu.detected||cand} detected → ${fu.true_positive||tp} confirmed → ${fu.distinct||0} distinct → ${fu.exploited||0} exploited · filtered ${fu.false_positive||0} FP/${fu.not_applicable||0} NA/${fu.needs_review||0} NR`;
  if(OPEN&&!String(OPEN).startsWith('finding:')&&!String(OPEN).startsWith('exch:')&&!String(OPEN).startsWith('ext:'))renderModal();
  if(PANEL)renderPanels(s);
  renderQueue(s);
 }
 async function getState(){try{return await(await fetch('/api/state')).json()}catch(e){return null}}
+const NARR={
+ operator:{t:"The Operator sets the mission",x:"A security engineer writes the goals and reads the user-story playbook — this is what triggers the Orchestrator. Nothing runs until the operator says go."},
+ orchestrator:{t:"The Orchestrator takes over",x:"It validates the config and stands up the shared substrate (work queue, finding store, budget, sandbox). It is the operator's single surface."},
+ testbed:{t:"The target comes online",x:"A disposable copy of the app starts in a sandbox. The Validator will attack THIS instance later — never production."},
+ index:{t:"The Indexer reads the code",x:"A deterministic parser builds the code index and call graph. This gates the fleet: nobody hunts before the code map exists (FR-003)."},
+ cartography:{t:"The Cartographer maps the attack surface",x:"It traces each entry point to its sinks and marks unguarded trust boundaries. See the Security map panel."},
+ 'coverage-init':{t:"Coverage-Guide plans the work",x:"Goals become a checklist so we can later say, honestly, 'we looked everywhere you asked'."},
+ detect:{t:"Detectors sweep, breadth-first",x:"Rules, secrets, dependencies and free exploration produce CANDIDATES — high volume, low precision on purpose. Nothing is shown to humans yet."},
+ triage:{t:"The Triager filters with evidence",x:"Each candidate is investigated; only a verifiable 3-leg proof becomes true-positive. The rest are filtered — that is the whole value."},
+ validate:{t:"The Validator proves it",x:"It GENERATES and RUNS an exploit against the testbed. 'Exploited' means demonstrated, not argued (Constitution VII)."},
+ report:{t:"The Reporter ships the result",x:"One report per confirmed finding, deduplicated and prioritized by real exploitation. Only true-positives are published."},
+ 'variant-hunt':{t:"Variant-Hunter (extension §6)",x:"Given a confirmed finding, it searches the rest of the code for the same pattern."},
+ 'attack-map':{t:"Attack-Mapper (extension §6)",x:"It chains exploited findings into a privilege graph: attacker entry → capability → your goal."},
+ remediate:{t:"Remediator (extension §6)",x:"It generates a safe-code patch per finding AND verifies it by re-running the rules on the fix."},
+};
+async function analyzeTarget(){const v=document.getElementById('tgt').value.trim();if(!v)return;
+ const body=(v.startsWith('http')||v.endsWith('.git'))?{git:v}:{source:v};
+ document.getElementById('tgt-msg').textContent='starting…';
+ try{const r=await(await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})).json();
+  document.getElementById('tgt-msg').textContent=r.ok?('running on '+(r.source||v)):('error: '+r.error);}catch(e){document.getElementById('tgt-msg').textContent='error';}}
+async function genReport(){document.getElementById('tgt-msg').textContent='generating…';
+ try{const r=await(await fetch('/api/report',{method:'POST'})).json();if(r&&r.ok){window.open('/report','_blank');document.getElementById('tgt-msg').textContent='report opened';}else document.getElementById('tgt-msg').textContent='report failed';}catch(e){document.getElementById('tgt-msg').textContent='error';}}
 let auto=null;
 async function doStep(){const s=await(await fetch('/api/step',{method:'POST'})).json();render(s);if(s.done)stopAuto();}
 async function doReset(){stopAuto();const s=await(await fetch('/api/reset',{method:'POST'})).json();render(s);}
@@ -532,7 +570,7 @@ function renderQueue(s){const TL=s.tasks_list||[];const c={claimed:0,open:0,bloc
   `<div class="qstat">\u2713 ${c.closed} done \u00B7 \u25B6 ${c.claimed} running \u00B7 \u25CB ${c.open} to do${c.blocked?` \u00B7 \u26D4 ${c.blocked} blocked`:''}</div>`+
   `<div class="hint" style="margin-bottom:4px">Full execution sequence (${TL.length} tasks)</div>`+
   TL.map(t=>`<div class="qrow ${t.state==='claimed'?'qcur':''}">${IC[t.state]||''} <span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'')}</span> ${esc(t.title)}${t.by?` <span style="color:#d29922">${esc(t.by)}</span>`:''}</div>`).join('');}
-document.getElementById('b-step').onclick=doStep;document.getElementById('b-reset').onclick=doReset;document.getElementById('b-play').onclick=toggleAuto;
+document.getElementById('b-step').onclick=doStep;document.getElementById('b-reset').onclick=doReset;document.getElementById('n-next').onclick=doStep;document.getElementById('b-play').onclick=toggleAuto;
 addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 (async()=>{const s=await getState();if(!s)return;render(s);
  if(s.mode!=='step'){setInterval(async()=>{const x=await getState();if(x)render(x);},1000);}})();
