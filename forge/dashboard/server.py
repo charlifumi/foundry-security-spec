@@ -129,6 +129,7 @@ def _finding_source(ctx, file, symbol):
 
 def _finding_dict(ctx, r) -> dict:
     import json
+    import os
     ev = json.loads(r["evidence"]) if r["evidence"] else {}
     src, line_start = _finding_source(ctx, r["file"], r["symbol"])
     tech = r["technique"] or ""
@@ -136,7 +137,22 @@ def _finding_dict(ctx, r) -> dict:
     remediation = ""
     if rule_id and rule_id in ctx.rulestore.rules:
         remediation = ctx.rulestore.rules[rule_id].body[:1400]
+    # Code d'exploitation généré + exécuté (Validator) + trace d'exécution.
+    exploit_code, exploit = "", {}
+    poc = r["poc_path"]
+    if poc and os.path.exists(poc):
+        try:
+            exploit_code = open(poc, encoding="utf-8", errors="ignore").read()
+        except OSError:
+            pass
+        tj = (poc[:-3] if poc.endswith(".py") else poc) + ".json"
+        if os.path.exists(tj):
+            try:
+                exploit = json.load(open(tj, encoding="utf-8"))
+            except (OSError, ValueError):
+                pass
     return {
+        "exploit_code": exploit_code, "exploit": exploit,
         "fp": r["fingerprint"], "file": r["file"], "symbol": r["symbol"], "cwe": r["cwe"],
         "vuln_class": r["vuln_class"], "state": r["state"], "verdict": r["verdict"],
         "exploited": bool(r["exploited"]), "severity": r["severity"], "technique": tech,

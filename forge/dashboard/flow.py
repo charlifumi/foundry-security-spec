@@ -243,7 +243,9 @@ function renderData(cur){if(!cur)return '';const d=cur.data||{};let h='';
  if(d.finding&&d.evidence){const f=d.finding,e=d.evidence;
    h+=`<div class="leg">finding</div><div class="data mono">${esc(f.cwe)} · <b>${esc(f.symbol)}</b> · ${esc(f.file)}<br>verdict: <b>${esc(f.verdict)}</b> · sévérité: ${esc(f.severity||'—')}</div>`;
    h+=`<div class="leg">evidence gate — 3 jambes</div><div class="data mono">① atteignabilité: ${esc((e.reachability||{}).symbol||'')} ${esc((e.reachability||{}).note||'')}<br>② frontière: ${esc((e.trust_boundary||{}).note||'')}<br>③ impact: ${esc((e.impact||{}).symbol||'')} ${esc((e.impact||{}).note||'')}</div>`;}
- if('exploited' in d){h+=`<div class="leg">résultat de validation</div><div class="data">${d.exploited?'<span class=okv><b>⚡ EXPLOITÉ sur le testbed</b></span>':'<span class=badv>non reproduit</span>'}</div>`;if(d.poc)h+=`<div class="leg">proof-of-concept</div><pre class="data">${esc(d.poc)}</pre>`;}
+ if('exploited' in d){h+=`<div class="leg">résultat de validation</div><div class="data">${d.exploited?'<span class=okv><b>⚡ EXPLOITÉ sur le testbed</b></span>':'<span class=badv>non reproduit</span>'}</div>`;
+   if(d.poc)h+=`<div class="leg">code d'exploitation généré ET exécuté</div><pre class="data mono">${esc(d.poc)}</pre>`;
+   if(d.trace&&d.trace.request)h+=`<div class="leg">exécution observée</div><div class="data mono"><b>Requête :</b> ${esc(d.trace.request)}<br><b>Réponse :</b><pre class="data" style="margin-top:3px">${esc(d.trace.response||'')}</pre><span class="okv">✅ ${esc(d.trace.impact||'')}</span></div>`;}
  if(d.published)h+=`<div class="leg">findings publiés</div><div class="data">${d.published.map(p=>`<div class="row mono sev-${p.severity}">${esc(p.cwe)} ${esc(p.symbol)} [${esc(p.severity)}]${p.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')}</div>`;
  return h;}
 
@@ -279,6 +281,8 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
    `<div class="card" style="margin-top:10px"><h4>Le problème — ${esc(ci.name)}</h4><div class="expl">${esc(ci.problem)}</div><div class="hint" style="margin-top:6px"><b>Impact :</b> ${esc(ci.impact)}</div></div>`+
    (reason?`<div class="card" style="margin-top:10px"><h4>Décision du Triager (pourquoi écarté)</h4><div class="expl">${esc(reason)}</div></div>`:'')+ev+
    `<div class="card" style="margin-top:10px"><h4>Code incriminé — ${esc(f.file)}:${esc(f.symbol)}</h4>${highlightCode(f.source,f.line_start)}</div>`+
+   ((f.exploited&&f.exploit_code)?`<div class="card" style="margin-top:10px"><h4>🧪 Code d'exploitation généré ET exécuté</h4><div class="hint" style="margin-bottom:5px">Ce script a réellement été lancé contre le testbed pour prouver l'exploitabilité.</div><pre class="data mono">${esc(f.exploit_code)}</pre></div>`:'')+
+   ((f.exploited&&f.exploit&&f.exploit.request)?`<div class="card" style="margin-top:10px"><h4>Exécution &amp; résultat observé</h4><div class="mono" style="font-size:11px"><b>Requête envoyée :</b> ${esc(f.exploit.request)}<div style="margin-top:5px"><b>Réponse du testbed (extrait) :</b></div><pre class="data" style="margin-top:3px">${esc(f.exploit.response||'')}</pre><div class="okv" style="margin-top:5px">✅ Impact observé : ${esc(f.exploit.impact||'')}</div></div></div>`:'')+
    (f.remediation?`<div class="card" style="margin-top:10px"><h4>Remédiation (règle ${esc(f.rule_id||'')})</h4><pre class="expl">${esc(f.remediation)}</pre></div>`:'')+
   `</div>`;
  document.getElementById('ov').style.display='flex';}

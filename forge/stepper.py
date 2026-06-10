@@ -9,6 +9,9 @@ un ordre déterministe. Les invariants du substrate restent ceux de spec.md.
 """
 from __future__ import annotations
 
+import json
+import os
+
 from .agents import (cartographer, coverage_guide, detector, indexer, reporter,
                      triager, validator)
 from .dashboard.server import build_snapshot
@@ -157,16 +160,20 @@ class StepRunner:
             fp = vs["payload"]["fp"]
             validator.handle({"payload": vs["payload"]}, ctx, "validator-0")
             f = ctx.findings.get(fp)
-            poc = ""
+            poc, trace = "", {}
             if f["poc_path"]:
                 try:
                     poc = open(f["poc_path"], encoding="utf-8").read()
-                except OSError:
-                    poc = ""
+                    tj = f["poc_path"][:-3] + ".json"
+                    if os.path.exists(tj):
+                        trace = json.load(open(tj, encoding="utf-8"))
+                except (OSError, ValueError):
+                    pass
             self._mk("validate", "validator",
                      f"Validator · {f['cwe']} {f['symbol']}",
                      ("⚡ EXPLOITÉ sur le testbed" if f["exploited"] else "non reproduit"),
-                     {"exploited": bool(f["exploited"]), "poc": poc}, ["triager", "validator"])
+                     {"exploited": bool(f["exploited"]), "poc": poc, "trace": trace},
+                     ["triager", "validator"])
             yield
 
         # --- Reporting + rollup ---
