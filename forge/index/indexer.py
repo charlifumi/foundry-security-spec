@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import ast
 import os
+import re
 from dataclasses import dataclass, field
 
 # Sinks de sécurité connus : nom d'appel -> (CWE, libellé). Sert aux chaînes d'appel
@@ -166,15 +167,23 @@ class CodeIndex:
                 })
         return out
 
+    @staticmethod
+    def _strip_comments(src: str) -> str:
+        """Retire docstrings et commentaires : la validation s'évalue sur le CODE, pas le texte."""
+        src = re.sub(r'(?s)""".*?"""', "", src)
+        src = re.sub(r"(?s)'''.*?'''", "", src)
+        return re.sub(r"#.*", "", src)
+
     def validation_in(self, func_name: str) -> list[str]:
-        """Indices de validation/assainissement présents dans la fonction.
+        """Indices de validation/assainissement présents dans le CODE de la fonction.
 
         Répond à : « où sont validés les arguments ? » — une liste vide sur un chemin
-        entrée→sink est le signal d'une frontière de confiance non gardée.
+        entrée→sink est le signal d'une frontière de confiance non gardée. Commentaires et
+        docstrings sont ignorés (sinon un commentaire « aucune allowlist » fausserait l'analyse).
         """
         found = []
         for info in self.by_name.get(func_name, []):
-            low = info.source.lower()
+            low = self._strip_comments(info.source).lower()
             for v in VALIDATORS:
                 if v in low and v not in found:
                     found.append(v)

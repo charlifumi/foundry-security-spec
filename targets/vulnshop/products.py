@@ -2,7 +2,17 @@
 
 Contient V2 — XSS réfléchi (CWE-79) : le terme de recherche est ré-affiché sans échappement.
 """
+import html
+
 from . import db
+
+
+def render_search_safe(term):
+    """Variante CORRECTE : la sortie est échappée. Une règle XSS la signale (motif large),
+    mais le Triager doit la classer FAUX-POSITIF car la frontière est gardée (html.escape).
+    """
+    escaped = html.escape(term)
+    return "<div>Résultats pour : " + escaped + "</div>"  # validé -> non exploitable
 
 
 def render_search(term):

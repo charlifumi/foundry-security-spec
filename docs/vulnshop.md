@@ -56,6 +56,27 @@ Dix vulnérabilités, couvrant **les quatre techniques** du Detector (règles, d
 secrets, exploration) et **les deux carve-outs** de l'evidence gate (jambes data-flow complètes
 pour V1–V6/V9 ; « présence = vuln » pour V7/V8).
 
+## Bruit volontaire — ce que le Triager doit ÉCARTER
+
+Tout ce qui est détecté ne doit pas finir en `true-positive` : la valeur du pipeline est de
+ne sortir que le pertinent. VulnShop contient donc, en plus des 10 vulns, des cas-pièges :
+
+| Cas | Localisation | Détecté comme | Verdict attendu | Pourquoi |
+|---|---|---|---|---|
+| Copie en buffer fixe **bornée par l'appelant** | `buffer.py:copy_into_fixed_buffer` | CWE-120 (règle) | **false-positive** | L'unique appelant tronque l'entrée à 64 octets (< 128) : non exploitable dans ce contexte d'appel. Démontre le triage **conscient du graphe d'appels**. |
+| XSS **correctement échappée** | `products.py:render_search_safe` | CWE-79 (règle, motif large) | **false-positive** | La sortie passe par `html.escape` : la frontière est gardée. |
+| Code d'**exemple** / documentation | `examples.py:example_unsafe_query_DO_NOT_USE` | CWE-89 (règle) | **not-applicable** | Hors périmètre (FR-055) : échantillon non déployé, aucun sink réel. |
+| Lead **non prouvable** | `app.py:suspected_timing_side_channel` (exploration) | CWE-208 | **needs-review** | La citation ne résout pas vers une fonction réelle : le gate démote (FR-088), il n'invente pas de preuve. |
+
+Et la distinction **vraie vuln mais non exploitée en live** : les secrets (CWE-798), la crypto
+faible (CWE-327/916) et les dépendances (CWE-1035) sont de vrais `true-positive` (« la présence
+est la vuln », FR-087a) mais ne portent pas le flag `exploited` — ils ne se démontrent pas par
+une requête sur le testbed. Seuls les findings *exploités en clair* portent ⚡.
+
+Résultat d'un run : ~25 candidats détectés → **21 true-positive publiés**, **8 exploités en
+live**, et **4 écartés** (2 false-positive, 1 not-applicable, 1 needs-review) avec, pour chacun,
+le motif de la décision visible dans le dashboard.
+
 ## Ce que la démo doit montrer, étape par étape
 
 1. **Indexer** : `vulnshop` parsé en quelques secondes → fonctions + graphe d'appels queryables.

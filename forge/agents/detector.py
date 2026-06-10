@@ -149,4 +149,14 @@ def _explore(task, ctx) -> list:
             follow.append(_triage_task(fp, {
                 "cwe": "CWE-639", "owasp": "A01", "severity": "high",
                 "presence_is_vuln": False, "rule_gap": True}))
+
+    # Lead spéculatif : soupçon non localisé dans une fonction réelle. La citation ne
+    # résoudra pas -> le gate doit démoter en needs-review (montre le filtre anti-fiction).
+    fp = ctx.findings.add_candidate(
+        file="app.py", symbol="suspected_timing_side_channel", vuln_class="CWE-208",
+        title="Canal auxiliaire temporel suspecté (non prouvé)", technique="exploratory",
+        description="Écart de temps possible à l'authentification ; non localisé dans une "
+                    "fonction précise, donc invérifiable en l'état.")
+    follow.append(_triage_task(fp, {"cwe": "CWE-208", "owasp": "A02", "severity": "medium",
+                                    "presence_is_vuln": False}))
     return follow

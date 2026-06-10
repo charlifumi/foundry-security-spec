@@ -23,13 +23,8 @@ def build_snapshot(ctx) -> dict:
          "claim": r["current_claim"], "hb_age": round(now - r["last_heartbeat"], 1)}
         for r in db.execute("SELECT * FROM agents ORDER BY role, instance_idx").fetchall()
     ]
-    findings = [
-        {"fp": r["fingerprint"], "file": r["file"], "symbol": r["symbol"], "cwe": r["cwe"],
-         "vuln_class": r["vuln_class"], "state": r["state"], "verdict": r["verdict"],
-         "exploited": bool(r["exploited"]), "severity": r["severity"], "technique": r["technique"],
-         "title": r["title"]}
-        for r in db.execute("SELECT * FROM findings ORDER BY updated_ts DESC").fetchall()
-    ]
+    findings = [_finding_dict(ctx, r)
+                for r in db.execute("SELECT * FROM findings ORDER BY updated_ts DESC").fetchall()]
     coverage = [
         {"component": r["component"], "state": r["state"]}
         for r in db.execute("SELECT * FROM coverage ORDER BY component").fetchall()
@@ -53,7 +48,70 @@ def build_snapshot(ctx) -> dict:
         "corpora": ctx.rulestore.sources(),
         "events": events[-30:],
         "role_stats": role_stats,
+        "verdicts": _verdict_counts(db),
+        "sources": _all_sources(ctx),
     }
+
+
+def _verdict_counts(db) -> dict:
+    return {r["verdict"]: r["c"] for r in db.execute(
+        "SELECT verdict, COUNT(*) c FROM findings WHERE verdict IS NOT NULL GROUP BY verdict")}
+
+
+def _finding_source(ctx, file, symbol):
+    """Code incriminé : corps de la fonction, ou ligne pertinente pour secret/dépendance."""
+    if ctx.index:
+        for fi in ctx.index.find_symbol(symbol):
+            if fi.file == file:
+                return fi.source, fi.line_start
+    import os
+    path = os.path.join(ctx.config["target"]["source"], file)
+    try:
+        lines = open(path, encoding="utf-8", errors="ignore").read().splitlines()
+    except OSError:
+        return "", 0
+    key = symbol.split("==")[0]
+    for i, ln in enumerate(lines):
+        if key and key in ln:
+            lo, hi = max(0, i - 1), min(len(lines), i + 2)
+            return "\n".join(lines[lo:hi]), lo + 1
+    return "", 0
+
+
+def _finding_dict(ctx, r) -> dict:
+    import json
+    ev = json.loads(r["evidence"]) if r["evidence"] else {}
+    src, line_start = _finding_source(ctx, r["file"], r["symbol"])
+    tech = r["technique"] or ""
+    rule_id = tech.split("rule:")[1] if tech.startswith("rule:") else None
+    remediation = ""
+    if rule_id and rule_id in ctx.rulestore.rules:
+        remediation = ctx.rulestore.rules[rule_id].body[:1400]
+    return {
+        "fp": r["fingerprint"], "file": r["file"], "symbol": r["symbol"], "cwe": r["cwe"],
+        "vuln_class": r["vuln_class"], "state": r["state"], "verdict": r["verdict"],
+        "exploited": bool(r["exploited"]), "severity": r["severity"], "technique": tech,
+        "title": r["title"], "description": r["description"], "owasp": r["owasp"],
+        "source": src, "line_start": line_start, "rule_id": rule_id,
+        "remediation": remediation, "evidence": ev,
+    }
+
+
+def _all_sources(ctx) -> dict:
+    """Tout le code source évalué (la cible est petite) pour le panneau 'Code source'."""
+    import os
+    root = ctx.config["target"]["source"]
+    out = {}
+    for dp, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d not in ("__pycache__", ".venv")]
+        for fn in files:
+            if fn.endswith(".py"):
+                rel = os.path.relpath(os.path.join(dp, fn), root)
+                try:
+                    out[rel] = open(os.path.join(dp, fn), encoding="utf-8", errors="ignore").read()
+                except OSError:
+                    pass
+    return out
 
 
 def _role_stats(ctx, db) -> dict:

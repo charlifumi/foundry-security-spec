@@ -58,12 +58,17 @@ def setup(cfg: dict) -> tuple[Context, object]:
 def _start_testbed(ctx):
     if not ctx.config["testbed"]["enabled"]:
         return
-    from targets.vulnshop.app import serve_in_thread
-    srv, base = serve_in_thread(host=ctx.config["testbed"]["host"],
-                                port=ctx.config["testbed"]["port"])
-    ctx.testbed_url = base
-    ctx.events.emit("testbed_up", url=base)
-    return srv
+    try:
+        from targets.vulnshop.app import serve_in_thread
+        srv, base = serve_in_thread(host=ctx.config["testbed"]["host"],
+                                    port=ctx.config["testbed"]["port"])
+        ctx.testbed_url = base
+        ctx.events.emit("testbed_up", url=base)
+        return srv
+    except OSError as e:  # port indisponible, etc. -> le Validator dégrade (FR-066)
+        ctx.testbed_url = None
+        ctx.events.emit("testbed_unavailable", reason=str(e))
+        return None
 
 
 def _seed_detection(ctx):

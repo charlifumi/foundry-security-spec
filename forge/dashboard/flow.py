@@ -24,7 +24,7 @@ header h1{font-size:16px;margin:0;letter-spacing:.5px}header h1 b{color:var(--ac
 .btn:hover{border-color:var(--acc)}.btn.play{color:var(--ok)}.btn:disabled{opacity:.4;cursor:default}
 .stepn{font-size:12px;color:var(--mut);min-width:74px;text-align:center}
 a.tg{margin-left:auto;color:var(--mut);text-decoration:none;font-size:12px;border:1px solid var(--line);padding:4px 10px;border-radius:6px}
-.stage{position:absolute;inset:52px 0 0 0;overflow:auto}.stage.insp-on{right:360px}
+.stage{position:absolute;inset:88px 0 0 0;overflow:auto}.stage.insp-on{right:360px}
 .canvas{position:relative;width:1520px;height:660px;margin:18px auto;
 background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:22px 22px}
 svg.edges{position:absolute;left:0;top:0;width:1520px;height:660px;pointer-events:none}
@@ -45,7 +45,7 @@ background:#0f1620;box-shadow:0 6px 18px rgba(0,0,0,.35);overflow:hidden;cursor:
 .chip.hot{color:#0b0f14;font-weight:700}
 .port{position:absolute;width:9px;height:9px;border-radius:50%;background:#0f1620;border:2px solid var(--mut);top:50%;transform:translateY(-50%)}
 .port.in{left:-5px}.port.out{right:-5px}
-.insp{position:fixed;top:52px;right:0;bottom:0;width:360px;border-left:1px solid var(--line);background:#0d1117;padding:14px;overflow:auto;display:none}
+.insp{position:fixed;top:88px;right:0;bottom:0;width:360px;border-left:1px solid var(--line);background:#0d1117;padding:14px;overflow:auto;display:none}
 .insp h2{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:0 0 6px}
 .insp .ttl{font-size:15px;font-weight:800;margin:2px 0}.insp .sum{color:var(--mut);font-size:12px;margin-bottom:10px}
 .data{background:#0b0f14;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:11.5px}
@@ -68,6 +68,30 @@ pre{white-space:pre-wrap;word-break:break-word;margin:4px 0;font-size:11px;color
 .tok{display:flex;gap:12px;flex-wrap:wrap}.tok b{font-size:18px}
 .taglist span{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:8px;padding:2px 7px;margin:2px 3px 0 0;color:var(--ink)}
 .hint{font-size:11px;color:var(--mut);margin-top:4px}
+/* barre d'onglets + panneaux déroulants */
+.pulls{position:fixed;top:52px;left:0;right:0;height:34px;display:flex;gap:8px;align-items:center;padding:0 16px;
+background:rgba(13,17,23,.85);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);z-index:18}
+.pull{cursor:pointer;font-size:12px;color:var(--mut);border:1px solid var(--line);border-radius:7px;padding:3px 10px;background:#0f1620}
+.pull:hover{color:var(--ink)}.pull.on{color:#0b0f14;background:var(--acc);border-color:var(--acc);font-weight:700}
+.panel{position:fixed;top:86px;left:0;right:0;max-height:46vh;overflow:auto;z-index:17;display:none;
+background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rgba(0,0,0,.4);padding:14px 18px}
+.panel h3{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut)}
+.bars .bar{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px}
+.bars .bar i{height:9px;border-radius:5px;display:inline-block}
+.fleetgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.fcard{background:#0f1620;border:1px solid var(--line);border-radius:10px;padding:9px}
+.fcard .h{font-weight:700;font-size:12px;margin-bottom:5px}.inst-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin:2px}
+.filerow{cursor:pointer;font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:3px 6px;border-radius:6px}
+.filerow:hover{background:#161b22}.filerow.on{background:#161b22;color:var(--acc)}
+.code{background:#0b0f14;border:1px solid var(--line);border-radius:8px;padding:0;overflow:auto;max-height:38vh}
+.code table{border-collapse:collapse;width:100%;font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+.code td{padding:0 8px;white-space:pre}.code .ln{color:#566;text-align:right;user-select:none;border-right:1px solid var(--line);background:#0d1117}
+.code tr.hot{background:rgba(248,81,73,.14)}.code tr.hot .ln{color:var(--bad)}
+.verdbar{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+.vd{font-size:9.5px;padding:1px 6px;border-radius:9px;border:1px solid var(--line)}
+.vd.tp{color:#0b0f14;background:var(--ok)}.vd.fp{color:var(--mut)}.vd.na{color:var(--mut)}.vd.nr{color:var(--warn);border-color:var(--warn)}
+.frow{cursor:pointer}.frow:hover{outline:1px solid var(--acc)}
+.expl{font-size:12px;color:#c9d1d9;line-height:1.5}
 </style></head><body>
 <header>
   <h1><b>FORGE</b> · pipeline</h1>
@@ -82,6 +106,17 @@ pre{white-space:pre-wrap;word-break:break-word;margin:4px 0;font-size:11px;color
   </span>
   <a class="tg" href="/panels">vue panneaux →</a>
 </header>
+<div class="pulls">
+  <span class="pull" id="p-res" onclick="togglePanel('res')">⚙ Ressources</span>
+  <span class="pull" id="p-fleet" onclick="togglePanel('fleet')">👥 Fleet</span>
+  <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Code source</span>
+  <span class="pull" id="p-find" onclick="togglePanel('find')">🛡 Findings</span>
+  <span style="margin-left:auto;font-size:11px;color:var(--mut)" id="outflow">—</span>
+</div>
+<div class="panel" id="panel-res"></div>
+<div class="panel" id="panel-fleet"></div>
+<div class="panel" id="panel-code"></div>
+<div class="panel" id="panel-find"></div>
 <div class="stage" id="stage"><div class="canvas" id="cv"><svg class="edges" id="svg" viewBox="0 0 1520 660"></svg></div></div>
 <aside class="insp" id="insp">
   <h2>Inspecteur — donnée du pas courant</h2>
@@ -169,7 +204,7 @@ function renderModal(){if(!OPEN||!LAST)return;const s=LAST,role=OPEN,inf=INFO[ro
  const F=s.findings||[];const mine=findingsByRole(role,F);
  let outHtml='';
  if(role==='detector'||role==='triager'||role==='validator'||role==='reporter'){
-   outHtml=`<div class="leg">${mine.length} finding(s)</div>`+mine.slice(0,12).map(f=>`<div class="row mono sev-${f.severity||'low'}">${esc(f.cwe||f.vuln_class)} ${esc(f.symbol)} ${f.exploited?'<span class=badv>⚡</span>':''}<span style="color:#8b949e"> ${esc(f.verdict||'')}</span></div>`).join('')||'<span class=hint>—</span>';
+   outHtml=`<div class="leg">${mine.length} finding(s) — cliquez pour le détail</div>`+mine.slice(0,14).map(f=>`<div class="row mono frow sev-${f.severity||'low'}" onclick="openFinding('${f.fp}')">${esc(f.cwe||f.vuln_class)} ${esc(f.symbol)} ${f.exploited?'<span class=badv>⚡</span>':''}<span style="color:#8b949e"> ${esc(f.verdict||'')}</span></div>`).join('')||'<span class=hint>—</span>';
  } else if(role==='indexer'){outHtml=`<div class="data">${(s.index||{}).functions||0} fonctions indexées</div>`;}
  else if(role==='cartographer'){outHtml=`<div class="data">${(s.flows||[]).length} chaînes d'appel cartographiées</div>`;}
  else if(role==='coverage'){const c=s.coverage||[];outHtml=`<div class="data">${c.filter(x=>x.state==='covered').length}/${c.length} composants couverts</div>`;}
@@ -206,6 +241,71 @@ function renderData(cur){if(!cur)return '';const d=cur.data||{};let h='';
  if(d.published)h+=`<div class="leg">findings publiés</div><div class="data">${d.published.map(p=>`<div class="row mono sev-${p.severity}">${esc(p.cwe)} ${esc(p.symbol)} [${esc(p.severity)}]${p.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')}</div>`;
  return h;}
 
+const CWE_INFO={
+ 'CWE-89':{name:'Injection SQL',problem:"Une requête SQL est construite en concaténant une entrée non fiable.",impact:"Bypass d'authentification, lecture et modification de la base."},
+ 'CWE-79':{name:'Cross-Site Scripting',problem:"Du HTML est renvoyé sans échapper l'entrée utilisateur.",impact:"Exécution de JavaScript arbitraire chez la victime, vol de session."},
+ 'CWE-78':{name:'Injection de commande',problem:"Une commande shell est bâtie à partir d'entrée non fiable (shell=True).",impact:"Exécution de code arbitraire sur le serveur (RCE)."},
+ 'CWE-918':{name:'SSRF',problem:"Le serveur requête une URL contrôlée par l'attaquant, sans allowlist.",impact:"Accès aux services internes et aux métadonnées cloud."},
+ 'CWE-639':{name:'IDOR / contrôle d\'accès cassé',problem:"Accès à une ressource par identifiant sans vérifier l'autorisation de l'appelant.",impact:"Lecture/modification des données d'autres utilisateurs."},
+ 'CWE-22':{name:'Path traversal',problem:"Un chemin de fichier est bâti à partir d'un nom non assaini.",impact:"Lecture de fichiers arbitraires (secrets, /etc/passwd)."},
+ 'CWE-502':{name:'Désérialisation non sûre',problem:"Des données non fiables sont désérialisées (pickle).",impact:"Exécution de code arbitraire (RCE)."},
+ 'CWE-798':{name:'Secret en dur',problem:"Un secret/clé est codé en dur dans la source.",impact:"Compromission directe pour quiconque a accès au dépôt."},
+ 'CWE-327':{name:'Crypto faible',problem:"Primitive de hachage dépréciée (MD5/SHA-1) pour un usage de sécurité.",impact:"Collisions / cassage facilité."},
+ 'CWE-916':{name:'Hash de mot de passe faible',problem:"Mot de passe haché sans KDF lent et salé.",impact:"Cassage des mots de passe par force brute."},
+ 'CWE-1035':{name:'Dépendance vulnérable',problem:"Dépendance tierce à vulnérabilité publiée (CVE).",impact:"Exploitation de la faille connue de la dépendance."},
+ 'CWE-120':{name:'Copie sans contrôle de borne',problem:"Copie dans un buffer fixe sans vérifier la taille de l'entrée.",impact:"Débordement mémoire — UNIQUEMENT si l'entrée n'est pas bornée par ailleurs."},
+ 'CWE-208':{name:'Canal auxiliaire temporel',problem:"Écart de temps potentiellement observable.",impact:"Fuite d'information par mesure du temps — souvent difficile à prouver."},
+};
+const VERD={'true-positive':{l:'true-positive',c:'tp'},'false-positive':{l:'false-positive',c:'fp'},'not-applicable':{l:'not-applicable',c:'na'},'needs-review':{l:'needs-review',c:'nr'}};
+function highlightCode(src,start){if(!src)return '<div class="hint">code indisponible</div>';
+ const sinks=/execute\(|os\.system|popen|subprocess|urlopen|\bopen\(|pickle\.loads?|hashlib\.(md5|sha1)|\+\s*\w+\s*\+|:\s*len\(|escape|\[\s*:\s*\d+\]/;
+ return '<div class="code"><table>'+src.split('\n').map((ln,i)=>`<tr class="${sinks.test(ln)?'hot':''}"><td class="ln">${(start||1)+i}</td><td>${esc(ln)||' '}</td></tr>`).join('')+'</table></div>';}
+function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find(x=>x.fp===fp);if(!f)return;
+ const ci=CWE_INFO[f.cwe]||{name:f.cwe||f.vuln_class,problem:f.title||'',impact:''};const vd=VERD[f.verdict]||{l:f.verdict,c:''};
+ const reason=(f.evidence&&f.evidence.reason)?f.evidence.reason.note:'';
+ const col=f.verdict==='true-positive'?(f.exploited?'#f85149':'#3fb950'):'#8b949e';
+ let ev='';if(f.verdict==='true-positive'&&f.evidence&&f.evidence.reachability){const e=f.evidence;
+  ev=`<div class="card" style="margin-top:10px"><h4>Preuve — evidence gate (3 jambes)</h4><div class="mono" style="font-size:11px">① atteignabilité : ${esc((e.reachability||{}).note||'')}<br>② frontière : ${esc((e.trust_boundary||{}).note||'')}<br>③ impact : ${esc((e.impact||{}).note||'')}</div></div>`;}
+ OPEN='finding:'+fp;
+ document.getElementById('modal').innerHTML=
+  `<div class="mh"><span class="ic" style="background:${col}">⚠</span><h3>${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
+  `<div class="mb"><div class="verdbar"><span class="vd ${vd.c}">${vd.l}</span><span class="vd">${esc(f.severity||'')}</span>${f.exploited?'<span class="vd" style="color:#f85149;border-color:#f85149">⚡ exploité en live</span>':''}<span class="vd">${esc(f.technique||'')}</span></div>`+
+   `<div class="card" style="margin-top:10px"><h4>Le problème — ${esc(ci.name)}</h4><div class="expl">${esc(ci.problem)}</div><div class="hint" style="margin-top:6px"><b>Impact :</b> ${esc(ci.impact)}</div></div>`+
+   (reason?`<div class="card" style="margin-top:10px"><h4>Décision du Triager (pourquoi écarté)</h4><div class="expl">${esc(reason)}</div></div>`:'')+ev+
+   `<div class="card" style="margin-top:10px"><h4>Code incriminé — ${esc(f.file)}:${esc(f.symbol)}</h4>${highlightCode(f.source,f.line_start)}</div>`+
+   (f.remediation?`<div class="card" style="margin-top:10px"><h4>Remédiation (règle ${esc(f.rule_id||'')})</h4><pre class="expl">${esc(f.remediation)}</pre></div>`:'')+
+  `</div>`;
+ document.getElementById('ov').style.display='flex';}
+let PANEL=null,SELFILE=null;
+function togglePanel(id){const cur=PANEL===id;document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
+ document.querySelectorAll('.pull').forEach(b=>b.classList.remove('on'));
+ if(cur){PANEL=null;return;}PANEL=id;document.getElementById('p-'+id).classList.add('on');
+ document.getElementById('panel-'+id).style.display='block';renderPanels(LAST);}
+function selFile(f){SELFILE=f;renderPanels(LAST);}
+function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
+ if(PANEL==='res'){let tin=0,tout=0,tc=0,tcost=0;const ks=Object.keys(rs);ks.forEach(r=>{tin+=rs[r].in_tok;tout+=rs[r].out_tok;tc+=rs[r].calls;tcost+=rs[r].cost;});
+  const mx=Math.max(1,...ks.map(r=>rs[r].calls));
+  document.getElementById('panel-res').innerHTML=`<h3>Consommation de ressources</h3><div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px">`+
+   `<div class="fcard"><div class="h">Appels LLM</div><b style="font-size:20px">${tc}</b></div>`+
+   `<div class="fcard"><div class="h">Tokens in / out</div><b style="font-size:20px">${tin} / ${tout}</b></div>`+
+   `<div class="fcard"><div class="h">Coût</div><b style="font-size:20px">$${tcost.toFixed(4)}</b><div class="hint">déterministe = $0</div></div>`+
+   `<div class="fcard"><div class="h">Runtime</div><b style="font-size:20px">${(s.budget||{}).runtime_min||0} min</b></div></div>`+
+   `<div class="bars">`+ks.map(r=>`<div class="bar"><span style="width:96px;color:${COL[r]||'#8b949e'}">${r}</span><i style="width:${Math.round(190*rs[r].calls/mx)}px;background:${COL[r]||'#8b949e'}"></i><span class="hint">${rs[r].calls} appels · ${rs[r].in_tok+rs[r].out_tok} tok · $${rs[r].cost}</span></div>`).join('')+`</div>`;}
+ if(PANEL==='fleet'){const ag=s.agents||[];
+  document.getElementById('panel-fleet').innerHTML=`<h3>Fleet — instances par catégorie (actives / configurées)</h3><div class="fleetgrid">`+
+   NODES.filter(n=>rs[n.id]).map(n=>{const st=rs[n.id];let dots='';const tot=Math.max(st.configured||1,st.alive,1);
+    for(let i=0;i<tot;i++)dots+=`<span class="inst-dot" style="background:${i<st.alive?COL[n.id]:'#2a3340'}"></span>`;
+    return `<div class="fcard"><div class="h" style="color:${COL[n.id]}">${n.t}</div>${dots}<div class="hint">${st.alive} active(s) / ${st.configured||1} configurée(s)</div></div>`;}).join('')+`</div>`;}
+ if(PANEL==='code'){const srcs=s.sources||{};const files=Object.keys(srcs).sort();
+  if(!SELFILE||!srcs[SELFILE])SELFILE=files.find(f=>f.endsWith('db.py'))||files[0];
+  document.getElementById('panel-code').innerHTML=`<h3>Code source évalué (${files.length} fichiers)</h3><div style="display:flex;gap:14px"><div style="min-width:170px">`+
+   files.map(f=>`<div class="filerow ${f===SELFILE?'on':''}" onclick="selFile('${f}')">${esc(f)}</div>`).join('')+`</div><div style="flex:1;min-width:0">${highlightCode(srcs[SELFILE]||'',1)}</div></div>`;}
+ if(PANEL==='find'){const F=s.findings||[];const byv={};F.forEach(f=>{(byv[f.verdict||'candidate']=byv[f.verdict||'candidate']||[]).push(f);});
+  document.getElementById('panel-find').innerHTML=`<h3>Findings — seuls les true-positive sont publiés ; le reste est filtré (cliquez pour le détail)</h3>`+
+   ['true-positive','false-positive','not-applicable','needs-review'].map(v=>{const l=byv[v]||[];if(!l.length)return '';const vd=VERD[v];
+    return `<div style="margin-bottom:8px"><span class="vd ${vd.c}">${vd.l} (${l.length})</span><div style="margin-top:5px">`+
+     l.map(f=>`<div class="row mono frow sev-${f.severity||'low'}" onclick="openFinding('${f.fp}')">${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)} <span style="color:#8b949e">(${esc(f.file)})</span>${f.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')+`</div></div>`;}).join('');}
+}
 function render(s){LAST=s;
  const F=s.findings||[];
  const cand=F.length,tp=F.filter(f=>f.verdict==='true-positive').length,exploited=F.filter(f=>f.exploited).length,
@@ -232,7 +332,8 @@ function render(s){LAST=s;
  setbd('indexer',`<span class="big">${(s.index||{}).functions||0}</span> fonctions · queryable`,((s.index||{}).functions||0)>0,cur('indexer'));
  setbd('cartographer',`<span class="big">${(s.flows||[]).length}</span> chaînes · carte de flux`,(s.flows||[]).length>0,cur('cartographer'));
  setbd('detector',`<span class="big">${cand}</span> candidats<div class="chips">${chips}</div>`,cand>0,cur('detector'));
- setbd('triager',`<span class="big">${tp}</span> TP · ${nr} needs-review`,tp>0,cur('triager'));
+ const vv=s.verdicts||{};
+ setbd('triager',`<span class="big">${tp}</span> TP confirmés<div class="verdbar"><span class="vd fp">${vv['false-positive']||0} FP</span><span class="vd na">${vv['not-applicable']||0} NA</span><span class="vd nr">${vv['needs-review']||0} NR</span></div>`,tp>0,cur('triager'));
  setbd('validator',`testbed · <span class="big">${exploited}</span> ⚡ exploités`,exploited>0,cur('validator'));
  setbd('reporter',`<span class="big">${pub}</span> rapports publiés`,pub>0,cur('reporter'));
  setbd('coverage',`${covDone}/${cov.length} couverts<div class="chips"><span class="chip">${corp}</span></div>`,s.coverage_complete,cur('coverage'));
@@ -244,7 +345,9 @@ function render(s){LAST=s;
    document.getElementById('i-data').innerHTML=renderData(c);
    document.getElementById('i-log').innerHTML=(s.steplog||[]).slice().reverse().map(it=>`<div class="it ${c&&it.n===c.n?'cur':''}">${it.n}. [${it.role}] ${esc(it.title)}</div>`).join('');
    document.getElementById('b-step').disabled=!!s.done;}
- if(OPEN)renderModal();
+ document.getElementById('outflow').textContent=`sortie : ${pub} publiés / ${cand} détectés · filtrés : ${(vv['false-positive']||0)} FP · ${(vv['not-applicable']||0)} NA · ${(vv['needs-review']||0)} NR`;
+ if(OPEN&&!String(OPEN).startsWith('finding:'))renderModal();
+ if(PANEL)renderPanels(s);
 }
 async function getState(){try{return await(await fetch('/api/state')).json()}catch(e){return null}}
 let auto=null;
