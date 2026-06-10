@@ -59,19 +59,29 @@ Le démonstrateur est **implémenté** et fonctionne avec la **bibliothèque sta
 3.11+**, sans aucune dépendance ni clé API (moteur déterministe par défaut) :
 
 ```bash
-# avec le dashboard temps réel :
+# mode PAS-À-PAS — graphe type N8N + inspecteur, on avance étape par étape :
+python -m forge up --step                # → http://127.0.0.1:8000  (boutons ⏮ ⏭ ▶)
+
+# dashboard temps réel (le pipeline tourne, on observe) :
 python -m forge up --dashboard           # → http://127.0.0.1:8000
 
-# ou en une passe, résumé en console :
+# en une passe, résumé en console :
 python -m forge up
 
 python -m forge status                   # état du dernier run (même source que le dashboard)
 python -m forge up --backend vector      # détection via la base vectorielle fédérée (ADR-002)
-python -m forge up --provider anthropic  # vrai LLM (pip install anthropic + ANTHROPIC_API_KEY)
 ```
 
-Aperçu visuel du dashboard sans rien lancer : ouvrez [`docs/dashboard-preview.html`](docs/dashboard-preview.html)
-(données d'un vrai run figées).
+Deux vues, même donnée live : `/` = **graphe du pipeline type N8N** (nœuds = agents, les
+findings circulent le long des arêtes) ; `/panels` = vue à panneaux (fleet, pipeline,
+cartographie, budget).
+
+En **mode pas-à-pas** (`--step`), chaque clic exécute réellement l'étape suivante — index,
+cartographie, détection, **evidence gate du triage**, **exploitation live** — et l'inspecteur
+montre la donnée générée et qui transite (candidats, les 3 jambes de preuve, le PoC observé…).
+
+Aperçu visuel sans rien lancer : ouvrez [`docs/dashboard-preview.html`](docs/dashboard-preview.html)
+(le graphe N8N avec les données d'un vrai run figées).
 
 La cible évaluée est [`targets/vulnshop`](docs/vulnshop.md), une app web **volontairement
 vulnérable** (10 classes semées). En ~1 s, Forge l'indexe, en dresse la **carte de flux**

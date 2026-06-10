@@ -37,7 +37,8 @@ def cmd_up(args):
         overrides["target.source"] = args.source
     if args.provider:
         overrides["llm.provider"] = args.provider
-        overrides["llm.model"] = args.model or args.provider
+        default_model = "claude-sonnet-4-6" if args.provider == "anthropic" else "deterministic"
+        overrides["llm.model"] = args.model or default_model
     if args.backend:
         overrides["detection.rule_backend"] = args.backend
     if args.no_testbed:
@@ -47,6 +48,19 @@ def cmd_up(args):
 
     print(f"[forge] cible : {cfg['target']['source']}")
     print(f"[forge] provider : {cfg['llm']['provider']} · règles : {cfg['detection']['rule_backend']}")
+
+    if args.step:
+        from .dashboard import serve
+        from .stepper import StepController
+        controller = StepController(cfg)
+        host, port = cfg["dashboard"]["host"], args.port or cfg["dashboard"]["port"]
+        print(f"[forge] mode PAS-À-PAS · dashboard : http://{host}:{port}")
+        print("[forge] avancez avec le bouton ⏭ (ou ▶ lecture auto). Ctrl-C pour quitter.")
+        try:
+            serve(controller, host=host, port=port, block=True)
+        except KeyboardInterrupt:
+            print("\n[forge] arrêt.")
+        return
 
     if args.dashboard:
         from .dashboard import serve
@@ -62,7 +76,14 @@ def cmd_up(args):
         except KeyboardInterrupt:
             print("\n[forge] arrêt du dashboard.")
     else:
-        ctx = orchestrator.run(cfg, max_seconds=args.max_seconds)
+        try:
+            ctx = orchestrator.run(cfg, max_seconds=args.max_seconds)
+        except RuntimeError as e:
+            print(f"\n[forge] {e}")
+            if "anthropic" in str(e):
+                print("        → pip install anthropic && export ANTHROPIC_API_KEY=sk-...")
+                print("        (ou lancez sans --provider pour le moteur déterministe, sans clé)")
+            return
         _summary(ctx)
 
 
@@ -89,6 +110,7 @@ def main(argv=None):
     up.add_argument("--provider", choices=["deterministic", "anthropic"])
     up.add_argument("--model"); up.add_argument("--backend", choices=["exhaustive", "vector"])
     up.add_argument("--dashboard", action="store_true", help="servir le dashboard temps réel")
+    up.add_argument("--step", action="store_true", help="mode pas-à-pas (graphe + inspecteur)")
     up.add_argument("--port", type=int); up.add_argument("--no-testbed", action="store_true")
     up.add_argument("--max-seconds", type=float, default=120.0)
     up.set_defaults(func=cmd_up)

@@ -74,7 +74,9 @@ def make_server(host=None, port=None):
     # un avatar de démo pour la lecture légitime
     with open(os.path.join(profile.AVATAR_DIR, "alice.png"), "wb") as f:
         f.write(b"\x89PNG\r\n_demo_avatar_")
-    return ThreadingHTTPServer((host or config.HOST, port or config.PORT), Handler)
+    # port == 0 -> éphémère (ne pas confondre avec "non fourni")
+    bind_port = config.PORT if port is None else port
+    return ThreadingHTTPServer((host or config.HOST, bind_port), Handler)
 
 
 def serve_in_thread(host=None, port=None):
