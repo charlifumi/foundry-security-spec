@@ -1,0 +1,11 @@
+# Forge tourne avec la bibliothèque standard de Python 3.11+ — AUCUNE dépendance requise
+# pour le démonstrateur (substrate, agents, sandbox logique, dashboard, CLI).
+#
+# Extras OPTIONNELS, pour les variantes décrites dans specs/001-forge/ :
+#   - mode LLM réel (cost-and-routing.md) :   anthropic>=0.39
+#   - config forge.yaml au lieu des défauts :  pyyaml>=6.0
+#   - frontend d'index multi-langage (plan) :  tree-sitter>=0.21, tree-sitter-python>=0.21
+#   - base vectorielle de production (ADR-002): sqlite-vec  (ou faiss-cpu / chromadb)
+#   - couche agent de production (ADR-001)   :  langgraph, langchain-anthropic
+#
+# Installer un extra : pip install anthropic pyyaml   (selon le besoin)

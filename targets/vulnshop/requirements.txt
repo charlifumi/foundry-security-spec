@@ -1,0 +1,7 @@
+# Dépendances de VulnShop.
+# V10 — Dépendance vulnérable (CWE-1035) : versions volontairement obsolètes à CVE connues.
+# (VulnShop tourne en réalité sur la stdlib ; ce fichier sert de cible au scan de dépendances.)
+Flask==0.12.2
+PyYAML==3.13
+requests==2.19.1
+Jinja2==2.10

@@ -53,24 +53,46 @@ Huit rôles, **chacun rattrapant le mode d'échec du précédent** : indexer san
 structure sans contexte ; détecter sans trier = bruit ; trier sans valider = fiction plausible ;
 valider sans couvrir = un tas de bugs sans preuve de complétude.
 
-## Démarrage rapide (une fois le build réalisé)
+## Démarrage rapide — ça tourne sans rien installer
+
+Le démonstrateur est **implémenté** et fonctionne avec la **bibliothèque standard de Python
+3.11+**, sans aucune dépendance ni clé API (moteur déterministe par défaut) :
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+# avec le dashboard temps réel :
+python -m forge up --dashboard           # → http://127.0.0.1:8000
 
-forge init                          # génère forge.yaml
-export ANTHROPIC_API_KEY=sk-...      # vrai LLM  (ou : forge up --provider replay  sans clé)
-forge up --config forge.yaml         # valide, lance la sandbox, spawn le fleet
-#                                      dashboard → http://localhost:8000
-forge status                         # état du fleet (même source que le dashboard)
-forge down                           # arrêt gracieux
+# ou en une passe, résumé en console :
+python -m forge up
+
+python -m forge status                   # état du dernier run (même source que le dashboard)
+python -m forge up --backend vector      # détection via la base vectorielle fédérée (ADR-002)
+python -m forge up --provider anthropic  # vrai LLM (pip install anthropic + ANTHROPIC_API_KEY)
 ```
 
-La cible évaluée est [`targets/vulnshop`](docs/vulnshop.md), une app Flask **volontairement
-vulnérable** (10 classes de vulnérabilités semées). Forge l'indexe, en dresse la carte de
-sécurité, détecte, trie sur preuves, **exploite en live** dans le conteneur, puis publie les
-rapports sous `runs/<id>/reports/`.
+Aperçu visuel du dashboard sans rien lancer : ouvrez [`docs/dashboard-preview.html`](docs/dashboard-preview.html)
+(données d'un vrai run figées).
+
+La cible évaluée est [`targets/vulnshop`](docs/vulnshop.md), une app web **volontairement
+vulnérable** (10 classes semées). En ~1 s, Forge l'indexe, en dresse la **carte de flux**
+(chaînes d'appel entrée→sink + points de validation), détecte (règles CodeGuard fédérées +
+secrets + dépendances + exploration), trie sur **preuves vérifiées mécaniquement**, **exploite
+en live** sur le testbed, et publie les rapports sous `runs/<id>/reports/`. Résultat typique :
+**21 findings confirmés, 8 exploités, 1 rule-gap** (l'IDOR trouvé par exploration → nouvelle règle).
+
+Tests (déterministes, sans LLM) : `python -m tests.test_substrate` et `python -m tests.test_e2e`.
+
+### Ce qui est implémenté
+
+```
+forge/substrate/   claim atomique + lease + fencing token, finding store, budget/tokens, events
+forge/index/       index AST : fonctions, graphe d'appels, chaînes d'appel, flux d'args, validation
+forge/rules/       RuleStore CodeGuard fédéré + base vectorielle (backends exhaustive | vector)
+forge/agents/      indexer · cartographe · detector(×4 modes) · triager(evidence gate) · validator(exploit live) · coverage-guide · reporter
+forge/dashboard/   serveur + SPA temps réel (fleet, pipeline, cartographie, budget)
+forge/cli.py       python -m forge up | status | version
+targets/vulnshop/  l'application cible volontairement vulnérable
+```
 
 ## État du projet
 
@@ -84,6 +106,7 @@ Ce dépôt est à la **phase Spec + Plan** de la méthode spec-kit. Sont présen
 | Plan technique (+ ADR LangGraph) | [`specs/001-forge/plan.md`](specs/001-forge/plan.md) |
 | Backlog de construction | [`specs/001-forge/tasks.md`](specs/001-forge/tasks.md) |
 | **Analyse approfondie** (améliorations, outils externes, async, normalisation, concurrence) | [`specs/001-forge/analysis.md`](specs/001-forge/analysis.md) |
+| **Coût & routage modèle** (comptabilité tokens, budget, local vs cloud) | [`specs/001-forge/cost-and-routing.md`](specs/001-forge/cost-and-routing.md) |
 | Manifeste des agents | [`AGENTS.md`](AGENTS.md) |
 | Design de l'app vulnérable | [`docs/vulnshop.md`](docs/vulnshop.md) |
 

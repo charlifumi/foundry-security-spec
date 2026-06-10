@@ -24,7 +24,7 @@
 | §11.1 VCS / issue tracker | **Système de fichiers + SQLite**, export GitHub Issues optionnel | Le *finding store* est SQLite. Les rapports publiés sont des fichiers Markdown sous `runs/<id>/reports/`. Un exporteur GitHub Issues (FR-078) est branchable mais désactivé par défaut pour la démo. |
 | §11.2 LLM provider | **Anthropic (Claude)** via clé API, derrière une interface `LLMProvider` | Abstraction provider-agnostique (LangChain `chat models`). Le mode démo nécessite `ANTHROPIC_API_KEY`. Comptabilité par tokens pour le budget (FR-113). |
 | §11.3 Datastore | **SQLite** (un fichier par run) | Work queue, finding store, coverage, heartbeats, budget : tables dans une base SQLite unique. Suffisant pour mono-machine ; satisfait les claims atomiques (transactions) et la persistance atomique (write-then-rename / `WAL`). |
-| §11.4 Vector search | **Désactivé au MVP** (FR-023 droppé), full-text FTS5 activé | Recherche par similarité non requise pour le chemin critique. FTS5 de SQLite couvre la recherche plein-texte (FR-022). Embeddings = évolution. |
+| §11.4 Vector search | **Adopté** (FR-023 activé) — base vectorielle pour la **fédération de corpus de règles externes** ; FTS5 conservé pour le plein-texte | Décision révisée : une base vectorielle permet d'intégrer des **corpus de règles tiers spécialisés par domaine** (crypto, web, cloud…) et de récupérer, par module/fonction, les règles pertinentes parmi de grands corpus, plutôt que de tout appliquer exhaustivement. Backend par défaut **sqlite-vec** (reste dans SQLite, zéro infra) ; alternatives FAISS / Chroma / pgvector. Embeddings via un `EmbeddingProvider` pluggable. Voir ADR-002 (`plan.md`). |
 | §11.5 Topologie de déploiement | **Une machine**, multiprocessing local | Un processus OS par instance d'agent ; coordination via SQLite partagé. |
 | §11.6 Runtime d'isolation | **Docker** | La cible (testbed) tourne dans un conteneur. Le fleet tourne dans un conteneur au réseau restreint (allowlist : API Anthropic + testbed). Satisfait FR-107 « sandbox par l'infra, pas par le prompt ». |
 | §11.7 Modèle d'auth | **Mono-opérateur local** | Pas de multi-tenant (NFR-003 droppé). |
@@ -59,7 +59,8 @@
 
 ## Récapitulatif des FR retirés ou réduits par ces choix
 
-- **FR-023** (embeddings / vector search) → reporté ; remplacé par FTS5.
+- **FR-023** (embeddings / vector search) → **adopté** : base vectorielle pour la fédération de
+  corpus de règles externes (voir §11.4 ci-dessus et ADR-002). FTS5 conservé en complément.
 - **NFR-003** (isolation multi-tenant) → retiré (mono-tenant).
 - **FR-038** (scan de dépendances) → conservé, sur `requirements.txt`.
 - Rôles d'extension §6 → hors périmètre du premier build.

@@ -31,9 +31,9 @@ detection:
 fleet:                            # composition du fleet (FR-004) — hot-reloadable (FR-009)
   indexer:        { instances: 1 }
   cartographer:   { instances: 1 }
-  detector:       { instances: 3, soft_session_min: 150, hard_session_min: 165 }
-  triager:        { instances: 2 }
-  validator:      { instances: 1 }
+  detector:       { instances: 3, soft_session_min: 150, hard_session_min: 165, model_tier: bulk, spend_cap_usd: 5.00 }
+  triager:        { instances: 2, model_tier: reasoning }
+  validator:      { instances: 1, model_tier: reasoning }
   coverage_guide: { instances: 1 }
   reporter:       { instances: 1 }
 
@@ -56,9 +56,22 @@ budget:                           # caps + yield auto-stop (FR-112..117) — hot
 
 integrations:                     # bindings concrets §11 — credentials par référence d'env
   llm:
-    provider: anthropic           # ou: replay  (rejoue des fixtures, sans clé)
-    model: claude-sonnet-4-6
-    api_key_env: ANTHROPIC_API_KEY
+    provider: anthropic           # ou: replay (fixtures, sans clé) ; gateway litellm pour local+cloud
+    gateway: litellm              # passerelle unifiée local+cloud (voir cost-and-routing.md §5)
+    routing:
+      policy: tiered              # tiered | cloud-only | local-only
+      escalate_on: [invalid_schema, low_confidence, gate_failed]
+      caching: true               # prompt caching (carte + prompts système)
+      batch_bulk: true            # balayage de règles en mode batch (−50%)
+    models:
+      bulk:       { provider: vllm,      model: qwen2.5-coder-32b, endpoint_env: VLLM_URL }
+      reasoning:  { provider: anthropic, model: claude-sonnet-4-6, api_key_env: ANTHROPIC_API_KEY }
+      escalation: { provider: anthropic, model: claude-opus-4-8,   api_key_env: ANTHROPIC_API_KEY }
+  rate_card:                      # tarifs $/Mtok — chargés, jamais codés en dur (FR-113)
+    claude-opus-4-8:   { input: 5.0, output: 25.0, cache_read: 0.5 }
+    claude-sonnet-4-6: { input: 3.0, output: 15.0, cache_read: 0.3 }
+    claude-haiku-4-5:  { input: 1.0, output: 5.0,  cache_read: 0.1 }
+    qwen2.5-coder-32b: { input: 0.0, output: 0.0,  local_cost_model: marginal }
   datastore: sqlite               # runs/<id>/forge.db
   issue_tracker: filesystem       # rapports MD ; mettre "github" pour activer l'export Issues
   github:                         # utilisé seulement si issue_tracker == github

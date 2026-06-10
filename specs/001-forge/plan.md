@@ -57,6 +57,44 @@ des unités testables. Un builder peut remplacer le provider sans toucher au sub
 
 ---
 
+## 1bis. ADR-002 — Base vectorielle pour la fédération de corpus de règles externes
+
+**Statut :** accepté (révise la mise en attente initiale de FR-023). **Contexte :** au-delà du
+corpus CodeGuard maison, on veut intégrer des **corpus de règles tiers spécialisés par domaine**
+(crypto, web, cloud, mobile…), produits par des entités plus expertes sur certains modules. Ces
+corpus peuvent être volumineux ; les appliquer tous, exhaustivement, à chaque fonction ne passe
+pas à l'échelle et dilue le signal.
+
+**Décision.** Introduire un **`RuleStore`** à deux backends, et une **base vectorielle** pour la
+récupération de règles pertinentes :
+
+- **Backend `exhaustive`** (défaut sur petit corpus) : applique chaque règle à chaque fonction
+  (FR-037 strict). Pas d'embeddings.
+- **Backend `vector`** (pour corpus larges/fédérés, FR-023) : chaque règle est *embedée* et
+  indexée ; pour une fonction/module donné, on récupère les **top-k règles pertinentes** (toutes
+  sources confondues) avant l'évaluation LLM. C'est ce qui rend la **fédération** viable : on
+  charge N corpus externes, on les interroge par pertinence, on ne paie pas l'application
+  exhaustive de tout.
+- **Fédération** : chaque corpus est une **source nommée** (`name`, `domain`, `version`, `trust`),
+  chargée dans le même index, filtrable à la requête (« seulement les corpus crypto certifiés »).
+
+**Choix techniques.**
+- **Index vectoriel** : **sqlite-vec** par défaut (reste dans le SQLite du substrate, zéro infra
+  nouvelle, cohérent avec NFR atomique) ; **FAISS** / **Chroma** en local autonome ; **pgvector**
+  si Postgres. Interface `VectorIndex` pluggable.
+- **Embeddings** : interface `EmbeddingProvider` pluggable — modèle local (sentence-transformers /
+  via la passerelle LiteLLM, cohérent avec le routage local de cost-and-routing.md), ou API. Un
+  **fallback déterministe** (hachage de n-grammes) permet de faire tourner la démo sans modèle.
+- **Format de règle** : **CodeGuard** (markdown unifié) reste le format d'échange ; le `RuleStore`
+  parse le front-matter (domaine, CWE, sévérité, source) pour le filtrage et l'embedding.
+
+**Conséquences.** Le corpus n'est plus un simple dossier appliqué en boucle : c'est un **magasin
+de connaissances fédéré et interrogeable**, condition pour que des tiers contribuent des règles
+de pointe par domaine. FTS5 reste pour le plein-texte. Le backend `exhaustive` garde la
+fidélité à FR-037 sur petits corpus ; le backend `vector` ajoute le passage à l'échelle.
+
+---
+
 ## 2. Découpage en modules
 
 ```
@@ -87,7 +125,11 @@ forge/
 ├── llm/
 │   ├── provider.py         # interface LLMProvider (Anthropic par défaut), comptage tokens
 │   └── prompts/            # un fichier par rôle (montés read-only dans le sandbox)
-├── rules/                  # corpus CodeGuard (markdown), versionné, FR-041
+├── rules/                  # corpus CodeGuard (markdown) fédérés, versionnés, FR-041
+│   ├── store.py            # RuleStore : backends exhaustive | vector (ADR-002, FR-023)
+│   ├── embeddings.py       # EmbeddingProvider pluggable (+ fallback déterministe)
+│   ├── vector_index.py     # VectorIndex pluggable (sqlite-vec | faiss | chroma | bruteforce)
+│   └── corpora/            # sources de règles nommées (maison + tierces fédérées)
 ├── index/                  # backend tree-sitter + interface de requête (FR-022)
 ├── dashboard/
 │   ├── server.py           # FastAPI + WebSocket, push depuis le substrate (FR-120..125)

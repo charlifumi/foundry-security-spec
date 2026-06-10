@@ -281,7 +281,10 @@ avec état persisté au substrate (modèle mono-opérateur mono-machine, cf. cla
 - **FR-021 / FR-021a** *(seed)* — Graphe d'appels (appels statiques directs au minimum).
 - **FR-022** *(adapté)* — Interface de requête : get-function-body, get-callers, get-callees,
   find-symbol, full-text (**FTS5**).
-- **FR-023** *(retiré au MVP)* — Embeddings/similarité reportés (voir clarifications).
+- **FR-023** *(adopté — révisé)* — Embeddings + **base vectorielle** pour la **fédération de
+  corpus de règles externes** et la récupération de règles pertinentes par module/fonction
+  (ADR-002). Backend `sqlite-vec` par défaut ; `EmbeddingProvider` pluggable. Sert aussi la
+  similarité de code (« trouver du code comme ce sanitizer »).
 - **FR-024** *(seed)* — Signaler « queryable » seulement quand FR-020/021/022 sont satisfaits.
 - **FR-025 / FR-106a** *(seed)* — Persistance atomique (write-new-then-swap) ; un lecteur ne
   voit jamais un index partiel.
@@ -319,8 +322,10 @@ avec état persisté au substrate (modèle mono-opérateur mono-machine, cf. cla
 - **FR-040** — Chasse exploratoire : instance avec goals + carte + description testbed + notes
   persistantes en contexte, libre de choisir quoi investiguer, accès lecture source + réseau
   testbed.
-- **FR-041** *(adapté)* — Corpus de règles = **artefact versionné indépendant** sous `rules/`,
-  **format CodeGuard** (markdown unifié). Ajoutable/révisable/réutilisable hors Forge.
+- **FR-041** *(adapté)* — Corpus de règles = **artefacts versionnés indépendants** sous `rules/`,
+  **format CodeGuard** (markdown unifié), **fédérables** : plusieurs corpus **sources nommées**
+  (maison + tiers spécialisés par domaine) chargés dans un `RuleStore` interrogeable par
+  pertinence via la base vectorielle (FR-023, ADR-002). Ajoutable/révisable/réutilisable hors Forge.
 - **FR-042** *(seed)* — Enregistrer un **rule-gap** quand un finding exploratoire confirmé
   n'aurait été produit par aucune règle. C'est le flywheel détection→prévention.
 - **FR-043** *(seed)* — Chaque candidat enregistre : localisation (fichier, fonction), classe,
