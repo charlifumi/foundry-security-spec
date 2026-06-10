@@ -218,6 +218,7 @@ for(const e of EDGES){const a=out(N[e.f]),b=inp(N[e.t]);
  const dots=[];for(let k=0;k<4;k++){const c=document.createElementNS(NS,'circle');
   c.setAttribute('r','3.6');c.setAttribute('opacity','0');svg.appendChild(c);dots.push(c);}
  EP.push({e,p,dots,len:p.getTotalLength()});}
+const EXTN_BYID={};
 const EXTN=[
  {id:'self-improver',ic:'SI',t:'Self-Improver',x:300,y:700,anchor:'detector',desc:"Reads the fleet's own logs, metrics and rule-gap records; proposes configuration, prompt and detection-rule changes to the operator. Closes the detection\u2192prevention flywheel (FR-042)."},
  {id:'deep-tester',ic:'DT',t:'Deep-Tester',x:600,y:700,anchor:'detector',desc:"Input-generation testing (fuzzing, property-based) against specific functions or endpoints the core pipeline already flagged. Depth where Detector gave breadth."},
@@ -338,7 +339,6 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
    ((f.fix&&f.fix.safe_code)?`<div class="card" style="margin-top:10px"><h4 style="color:#3fb950">🛠 Fix proposal — safe code</h4><div class="hint" style="margin-bottom:6px">${(f.fix.steps||[]).map(x=>'• '+esc(x)).join('<br>')}</div><pre class="data mono" style="border-color:#3fb950">${esc(f.fix.safe_code)}</pre></div>`:'')+
   `</div>`;
  document.getElementById('ov').style.display='block';}
-const EXTN_BYID={};
 function openExt(id){const x=EXTN_BYID[id];if(!x)return;OPEN='ext:'+id;
  document.getElementById('modal').innerHTML=`<div class="mh winhead"><span class="ic" style="background:#8b949e">${x.ic}</span><h3>${esc(x.t)} <span class="vd" style="border-color:#8b949e;color:#8b949e">extension \u00A76</span></h3><span class="x" onclick="closeModal()">\u2715</span></div><div class="mb"><div class="expl">${esc(x.desc)}</div><div class="hint" style="margin-top:8px">Described in spec.md \u00A74.3 / \u00A76 (extension role, not specified with FRs). Build after the eight core roles produce trustworthy findings.</div><div class="hint">Plugs in at: <b>${esc(x.anchor)}</b>.</div></div>`;
  document.getElementById('ov').style.display='block';}
