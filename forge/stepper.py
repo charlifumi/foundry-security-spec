@@ -88,23 +88,23 @@ class StepRunner:
     # ----- la séquence ----------------------------------------------------------
     def _steps(self):
         ctx = self.ctx
-        self._mk("testbed", "orchestrator", "Testbed démarré",
-                 f"VulnShop écoute sur {ctx.testbed_url}", {"testbed_url": ctx.testbed_url},
+        self._mk("testbed", "orchestrator", "Testbed started",
+                 f"VulnShop listening on {ctx.testbed_url}", {"testbed_url": ctx.testbed_url},
                  ["operator", "orchestrator"])
         yield
 
         indexer.run_indexer(ctx)
         funcs = [{"file": f.file, "name": f.name, "params": f.params} for f in ctx.index.all_functions()]
-        self._mk("index", "indexer", "Index construit (gate FR-003)",
-                 f"{ctx.index.function_count()} fonctions dans {len(ctx.index.functions)} fichiers",
+        self._mk("index", "indexer", "Index built (gate FR-003)",
+                 f"{ctx.index.function_count()} functions in {len(ctx.index.functions)} files",
                  {"functions": funcs}, ["orchestrator", "indexer"])
         yield
 
         cartographer.run_cartographer(ctx)
         flows = ctx.security_map.get("flows", [])
-        self._mk("cartography", "cartographer", "Carte de flux (chaînes d'appel)",
-                 f"{len(flows)} chaînes entrée→sink ; "
-                 f"{ctx.security_map.get('unguarded_boundaries', 0)} frontières non gardées",
+        self._mk("cartography", "cartographer", "Data-flow map (call chains)",
+                 f"{len(flows)} entry→sink chains; "
+                 f"{ctx.security_map.get('unguarded_boundaries', 0)} unguarded boundaries",
                  {"flows": [{"entry": f["entry"], "file": f["file"],
                              "chain": [str(x) for x in f["chain"]], "validated": f["validated"]}
                             for f in flows]},
@@ -113,8 +113,8 @@ class StepRunner:
 
         coverage_guide.init_coverage(ctx)
         cov = ctx.db.connect().execute("SELECT component, goal FROM coverage").fetchall()
-        self._mk("coverage-init", "coverage", "Checklist de couverture dérivée",
-                 f"{len(cov)} items (composant × goal)",
+        self._mk("coverage-init", "coverage", "Coverage checklist derived",
+                 f"{len(cov)} items (component × goal)",
                  {"items": [dict(r) for r in cov]}, ["cartographer", "coverage"])
         yield
 
@@ -137,7 +137,7 @@ class StepRunner:
                               "title": f["title"]})
             label = spec.get("file") or spec["kind"]
             self._mk("detect", "detector", f"Detector · {spec['kind']} · {label}",
-                     f"{len(cands)} candidat(s) écrit(s) au finding store",
+                     f"{len(cands)} candidate(s) written to the finding store",
                      {"candidates": cands}, ["cartographer", "detector"])
             yield
 
@@ -150,7 +150,7 @@ class StepRunner:
             import json as _j
             self._mk("triage", "triager", f"Triager · {f['cwe']} {f['symbol']}",
                      f"verdict = {f['verdict']}" + ("" if f["verdict"] == "true-positive"
-                                                    else " (démoté par le gate)"),
+                                                    else " (demoted by the gate)"),
                      {"finding": {"fp": fp, "file": f["file"], "symbol": f["symbol"],
                                   "cwe": f["cwe"], "severity": f["severity"],
                                   "verdict": f["verdict"]},
@@ -179,7 +179,7 @@ class StepRunner:
                     pass
             self._mk("validate", "validator",
                      f"Validator · {f['cwe']} {f['symbol']}",
-                     ("⚡ EXPLOITÉ sur le testbed" if f["exploited"] else "non reproduit"),
+                     ("⚡ EXPLOITED on the testbed" if f["exploited"] else "not reproduced"),
                      {"exploited": bool(f["exploited"]), "poc": poc, "trace": trace},
                      ["triager", "validator"])
             yield
@@ -190,8 +190,8 @@ class StepRunner:
         coverage_guide.review(ctx)
         reporter.write_rollup(ctx)
         tps = ctx.findings.confirmed_true_positives()
-        self._mk("report", "reporter", "Rapports publiés + rollup",
-                 f"{len(tps)} rapports, {sum(1 for f in tps if f['exploited'])} exploités",
+        self._mk("report", "reporter", "Reports published + rollup",
+                 f"{len(tps)} reports, {sum(1 for f in tps if f['exploited'])} exploited",
                  {"published": [{"cwe": f["cwe"], "symbol": f["symbol"], "severity": f["severity"],
                                  "exploited": bool(f["exploited"])} for f in tps]},
                  ["validator", "reporter"])

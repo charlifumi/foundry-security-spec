@@ -25,14 +25,16 @@ header h1{font-size:16px;margin:0;letter-spacing:.5px}header h1 b{color:var(--ac
 .stepn{font-size:12px;color:var(--mut);min-width:74px;text-align:center}
 a.tg{margin-left:auto;color:var(--mut);text-decoration:none;font-size:12px;border:1px solid var(--line);padding:4px 10px;border-radius:6px}
 .stage{position:absolute;inset:88px 0 0 0;overflow:auto}.stage.insp-on{right:360px}
-.canvas{position:relative;width:1520px;height:660px;margin:18px auto;
+.canvas{position:relative;width:1520px;height:800px;margin:18px auto;
 background-image:radial-gradient(var(--grid) 1px,transparent 1px);background-size:22px 22px}
-svg.edges{position:absolute;left:0;top:0;width:1520px;height:660px;pointer-events:none}
+svg.edges{position:absolute;left:0;top:0;width:1520px;height:800px;pointer-events:none}
 .node{position:absolute;width:166px;border:1px solid var(--line);border-top:3px solid var(--mut);border-radius:12px;
 background:#0f1620;box-shadow:0 6px 18px rgba(0,0,0,.35);overflow:hidden;cursor:pointer;transition:box-shadow .2s,transform .15s}
 .node:hover{transform:translateY(-2px)}
 .node.active{box-shadow:0 0 0 1px var(--acc),0 6px 22px rgba(88,166,255,.22)}
 .node.cur{box-shadow:0 0 0 2px var(--warn),0 0 26px rgba(210,153,34,.5);transform:scale(1.04);z-index:5}
+.node.ext{opacity:.85;background:#0c1118;border:1px dashed #44505e;border-top:3px dashed #8b949e}
+.node.ext .bd{color:#7d8794;font-style:italic}
 .node .hd{display:flex;align-items:center;gap:7px;padding:7px 9px;font-weight:700;font-size:12.5px;border-bottom:1px solid var(--line)}
 .node .ic{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;color:#0b0f14;font-weight:800}
 .node .inst{margin-left:auto;font-size:10px;font-weight:800;padding:1px 6px;border-radius:10px;background:#0b0f14;border:1px solid var(--line);color:var(--mut)}
@@ -62,12 +64,13 @@ background:#0f1620;border:1px solid var(--line);border-radius:14px;box-shadow:0 
 .winhead{cursor:move;user-select:none}
 .modal .mh{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
 /* widget flottant de file de tâches */
-.qwin{position:fixed;left:16px;top:300px;width:300px;max-height:60vh;overflow:auto;background:#0f1620;
+.qwin{position:fixed;left:16px;top:150px;width:344px;max-height:60vh;overflow:auto;background:#0f1620;
 border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 36px rgba(0,0,0,.5);z-index:16}
 .qhead{display:flex;align-items:center;gap:6px;padding:8px 11px;border-bottom:1px solid var(--line);font-weight:700;font-size:12px;cursor:move}
 .qhead .qx{margin-left:auto;cursor:pointer;color:var(--mut);border:1px solid var(--line);border-radius:5px;padding:0 7px;font-size:13px}
 .qbody{padding:8px 11px}.qstat{font-size:11px;margin-bottom:6px;line-height:1.7}
 .qrow{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;padding:2px 0;border-bottom:1px solid #161b22;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qrow.qcur{background:rgba(210,153,34,.14)}
 .modal .mh .ic{width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;color:#0b0f14;font-weight:800}
 .modal .mh h3{margin:0;font-size:17px}.modal .mh .x{margin-left:auto;cursor:pointer;color:var(--mut);font-size:18px;border:1px solid var(--line);border-radius:6px;padding:0 9px}
 .modal .mb{padding:14px 16px}.modal .desc{color:var(--mut);font-size:13px;margin-bottom:12px}
@@ -111,25 +114,27 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 <header>
   <h1><b>FORGE</b> · pipeline</h1>
   <span class="badge" id="run">run —</span>
-  <span class="badge" id="cov">couverture —</span>
+  <span class="badge" id="cov">coverage —</span>
   <span class="badge" id="gap">rule-gaps —</span>
   <span class="ctrl" id="ctrl">
-    <button class="btn" id="b-reset" title="recommencer">⏮</button>
-    <button class="btn play" id="b-play" title="lecture auto">▶</button>
-    <button class="btn" id="b-step" title="étape suivante">⏭</button>
-    <span class="stepn" id="stepn">étape 0</span>
+    <button class="btn" id="b-reset" title="restart">⏮</button>
+    <button class="btn play" id="b-play" title="auto-play">▶</button>
+    <button class="btn" id="b-step" title="next step">⏭</button>
+    <span class="stepn" id="stepn">step 0</span>
   </span>
-  <a class="tg" href="/panels">vue panneaux →</a>
+  <a class="tg" href="/panels">panels view →</a>
 </header>
 <div class="pulls">
-  <span class="pull" id="p-res" onclick="togglePanel('res')">⚙ Ressources</span>
+  <span class="pull" id="p-res" onclick="togglePanel('res')">⚙ Resources</span>
   <span class="pull" id="p-fleet" onclick="togglePanel('fleet')">👥 Fleet</span>
-  <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Code source</span>
+  <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Source</span>
   <span class="pull" id="p-find" onclick="togglePanel('find')">🛡 Findings</span>
-  <span class="pull" id="p-out" onclick="togglePanel('out')">📤 Sortie priorisée</span>
-  <span class="pull on" id="p-tasks" onclick="toggleQueue()">📋 Widget queue</span>
-  <span class="pull" id="p-exch" onclick="togglePanel('exch')">🔀 Échanges</span>
-  <span class="pull" id="p-tools" onclick="togglePanel('tools')">🧰 Outils</span>
+  <span class="pull" id="p-out" onclick="togglePanel('out')">📤 Prioritized output</span>
+  <span class="pull on" id="p-tasks" onclick="toggleQueue()">📋 Queue widget</span>
+  <span class="pull" id="p-exch" onclick="togglePanel('exch')">🔀 Exchanges</span>
+  <span class="pull" id="p-tools" onclick="togglePanel('tools')">🧰 Tools</span>
+  <span class="pull" id="p-fixes" onclick="togglePanel('fixes')">🛠 Fixes</span>
+  <span class="pull" id="p-stories" onclick="togglePanel('stories')">📖 Stories</span>
   <span style="margin-left:auto;font-size:11px;color:var(--mut)" id="outflow">—</span>
 </div>
 <div class="panel" id="panel-res"></div>
@@ -140,33 +145,35 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 <div class="panel" id="panel-tasks"></div>
 <div class="panel" id="panel-exch"></div>
 <div class="panel" id="panel-tools"></div>
-<div class="stage" id="stage"><div class="canvas" id="cv"><svg class="edges" id="svg" viewBox="0 0 1520 660"></svg></div></div>
+<div class="panel" id="panel-fixes"></div>
+<div class="panel" id="panel-stories"></div>
+<div class="stage" id="stage"><div class="canvas" id="cv"><svg class="edges" id="svg" viewBox="0 0 1520 800"></svg></div></div>
 <aside class="insp" id="insp">
-  <h2>Inspecteur — donnée du pas courant</h2>
+  <h2>Inspector — current step data</h2>
   <div class="ttl" id="i-ttl">—</div><div class="sum" id="i-sum"></div>
   <div id="i-data"></div>
-  <div class="slog"><h2>Journal des pas</h2><div id="i-log"></div></div>
+  <div class="slog"><h2>Step log</h2><div id="i-log"></div></div>
 </aside>
-<div class="leg-flow">━ flux de données (animé) &nbsp;·&nbsp; ┄ supervision (orchestrateur → tous) &nbsp;·&nbsp; <b>cliquez une arête</b> pour le contrat · <b>glissez</b> les fenêtres</div>
-<div class="qwin win" id="qwidget"><div class="qhead winhead">📋 File de tâches (live)<span class="qx" onclick="document.getElementById('qwidget').style.display='none';document.getElementById('p-tasks').classList.remove('on')">–</span></div><div class="qbody" id="qbody"></div></div>
+<div class="leg-flow">━ data flow (animated) &nbsp;·&nbsp; ┄ supervision (orchestrator → all) &nbsp;·&nbsp; <b>click an edge</b> for its exchange contract · <b>drag</b> the windows · ┈ extension roles (§6)</div>
+<div class="qwin win" id="qwidget"><div class="qhead winhead">📋 Task queue (live)<span class="qx" onclick="document.getElementById('qwidget').style.display='none';document.getElementById('p-tasks').classList.remove('on')">–</span></div><div class="qbody" id="qbody"></div></div>
 <div class="ov" id="ov"><div class="modal win" id="modal"></div></div>
 <script>
 const COL={operator:'#9aa5b1',orchestrator:'#58a6ff',indexer:'#39c5cf',cartographer:'#34d399',
 detector:'#f59e0b',triager:'#bc8cff',validator:'#f85149',reporter:'#7ee787',coverage:'#e879f9'};
 const INFO={
- operator:{d:"L'humain qui définit les goals, lance et pilote l'évaluation.",tools:['CLI forge','goals'],in:['forge.yaml'],out:['évaluation']},
- orchestrator:{d:"Surface unique : valide, spawn et supervise le fleet, applique le budget.",tools:['superviseur heartbeat','work queue','budget governor'],in:['config','état du fleet'],out:['fleet vivant','status']},
- indexer:{d:"Construit l'index de code (parser déterministe). Gate le fleet (FR-003).",tools:['parser AST','graphe d\'appels','résolveur de citations'],in:['code source'],out:['index queryable']},
- cartographer:{d:"Carte de sécurité : chaînes d'appel entrée→sink, frontières, validation.",tools:['requêtes index','chaînes d\'appel','détection de validation'],in:['index','source','goals'],out:['carte de flux']},
- detector:{d:"Produit des candidats : règles CodeGuard + secrets + dépendances + exploration.",tools:['corpus CodeGuard (règles)','scan secrets','scan dépendances','exploration libre'],in:['index','carte','corpus fédéré'],out:['candidats','rule-gaps']},
- triager:{d:"Investigue et pose le verdict via l'evidence gate (citations vérifiées).",tools:['résolution de citations','evidence gate à 3 jambes'],in:['candidat','index','carte'],out:['verdict + preuve']},
- validator:{d:"Reproduit l'impact sur le testbed live (oracles d'exploitation).",tools:['oracles HTTP : SQLi · XSS · cmd · SSRF · IDOR · traversal · deser','testbed'],in:['finding TP','testbed'],out:['flag exploited','PoC runnable']},
- reporter:{d:"Rédige un rapport par TP + le rollup (CWE/CVSS/OWASP).",tools:['rendu Markdown','mapping CWE/CVSS/OWASP'],in:['findings TP','carte'],out:['rapports','rollup']},
- coverage:{d:"Traduit les goals en checklist et déclare la couverture complète.",tools:['checklist','référentiels OWASP/CWE'],in:['goals','carte'],out:['flag couverture','tâches dirigées']},
+ operator:{d:"The human who sets the goals, starts and steers the evaluation.",tools:['forge CLI','goals'],in:['forge.yaml'],out:['evaluation']},
+ orchestrator:{d:"Single surface: validates, spawns and supervises the fleet, enforces budget.",tools:['heartbeat supervisor','work queue','budget governor'],in:['config','fleet state'],out:['live fleet','status']},
+ indexer:{d:"Builds the code index (deterministic parser). Gates the fleet (FR-003).",tools:['AST parser','call graph','citation resolver'],in:['source code'],out:['queryable index']},
+ cartographer:{d:"Security map: entry→sink call chains, trust boundaries, validation.",tools:['index queries','call chains','validation detection'],in:['index','source','goals'],out:['data-flow map']},
+ detector:{d:"Produces candidates: CodeGuard rules + secrets + dependencies + exploration.",tools:['CodeGuard corpus (rules)','secret scan','dependency scan','free exploration'],in:['index','map','federated corpus'],out:['candidates','rule-gaps']},
+ triager:{d:"Investigates and assigns the verdict via the evidence gate (verified citations).",tools:['citation resolution','3-leg evidence gate'],in:['candidate','index','map'],out:['verdict + evidence']},
+ validator:{d:"Reproduces impact on the live testbed (exploitation oracles).",tools:['HTTP oracles: SQLi · XSS · cmd · SSRF · IDOR · traversal · deser','testbed'],in:['TP finding','testbed'],out:['exploited flag','runnable PoC']},
+ reporter:{d:"Writes one report per TP + the rollup (CWE/CVSS/OWASP).",tools:['Markdown rendering','CWE/CVSS/OWASP mapping'],in:['TP findings','map'],out:['reports','rollup']},
+ coverage:{d:"Turns goals into a checklist and declares coverage complete.",tools:['checklist','OWASP/CWE references'],in:['goals','map'],out:['coverage flag','directed tasks']},
 };
 const NODES=[
- {id:'operator',ic:'OP',t:'Opérateur',x:20,y:280},{id:'orchestrator',ic:'OR',t:'Orchestrateur',x:210,y:280},
- {id:'indexer',ic:'IX',t:'Indexer',x:400,y:150},{id:'cartographer',ic:'CA',t:'Cartographe',x:590,y:410},
+ {id:'operator',ic:'OP',t:'Operator',x:20,y:280},{id:'orchestrator',ic:'OR',t:'Orchestrator',x:210,y:280},
+ {id:'indexer',ic:'IX',t:'Indexer',x:400,y:150},{id:'cartographer',ic:'CA',t:'Cartographer',x:590,y:410},
  {id:'detector',ic:'DE',t:'Detector',x:790,y:280},{id:'triager',ic:'TR',t:'Triager · gate',x:980,y:280},
  {id:'validator',ic:'VA',t:'Validator',x:1170,y:150},{id:'reporter',ic:'RE',t:'Reporter',x:1350,y:290},
  {id:'coverage',ic:'CV',t:'Coverage-Guide',x:790,y:480},
@@ -200,7 +207,7 @@ for(const id of ['indexer','cartographer','detector','triager','validator','repo
  const a=out(N['orchestrator']),b=inp(N[id]);const p=document.createElementNS(NS,'path');
  p.setAttribute('d',mkpath(a,b));p.setAttribute('fill','none');p.setAttribute('stroke','#8b949e');
  p.setAttribute('stroke-width','1');p.setAttribute('stroke-dasharray','3 5');p.setAttribute('opacity','0.16');
- p.style.cursor='pointer';p.style.pointerEvents='stroke';p.onclick=()=>openExchange('orchestrator','(tous)');svg.appendChild(p);}
+ p.style.cursor='pointer';p.style.pointerEvents='stroke';p.onclick=()=>openExchange('orchestrator','(all)');svg.appendChild(p);}
 const EP=[];
 for(const e of EDGES){const a=out(N[e.f]),b=inp(N[e.t]);
  const p=document.createElementNS(NS,'path');p.setAttribute('d',mkpath(a,b));
@@ -211,6 +218,20 @@ for(const e of EDGES){const a=out(N[e.f]),b=inp(N[e.t]);
  const dots=[];for(let k=0;k<4;k++){const c=document.createElementNS(NS,'circle');
   c.setAttribute('r','3.6');c.setAttribute('opacity','0');svg.appendChild(c);dots.push(c);}
  EP.push({e,p,dots,len:p.getTotalLength()});}
+const EXTN=[
+ {id:'self-improver',ic:'SI',t:'Self-Improver',x:300,y:700,anchor:'detector',desc:"Reads the fleet's own logs, metrics and rule-gap records; proposes configuration, prompt and detection-rule changes to the operator. Closes the detection\u2192prevention flywheel (FR-042)."},
+ {id:'deep-tester',ic:'DT',t:'Deep-Tester',x:600,y:700,anchor:'detector',desc:"Input-generation testing (fuzzing, property-based) against specific functions or endpoints the core pipeline already flagged. Depth where Detector gave breadth."},
+ {id:'variant-hunter',ic:'VH',t:'Variant-Hunter',x:880,y:700,anchor:'triager',desc:"Given one confirmed finding, searches the rest of the target for the same pattern."},
+ {id:'attack-mapper',ic:'AM',t:'Attack-Mapper',x:1140,y:700,anchor:'reporter',desc:"Assembles confirmed findings into a privilege graph showing how they chain from attacker entry points to operator-defined goals."},
+ {id:'remediator',ic:'RM',t:'Remediator',x:1340,y:700,anchor:'reporter',desc:"Generates and verifies candidate patches for confirmed findings (see the \uD83D\uDEE0 Fixes panel)."},
+];
+for(const x of EXTN){const a=N[x.anchor];
+ const pa=document.createElementNS(NS,'path');
+ pa.setAttribute('d',`M ${a.x+NW/2} ${a.y+NH} C ${a.x+NW/2} ${a.y+NH+40}, ${x.x+NW/2} ${x.y-40}, ${x.x+NW/2} ${x.y}`);
+ pa.setAttribute('fill','none');pa.setAttribute('stroke','#5b6673');pa.setAttribute('stroke-width','1.4');pa.setAttribute('stroke-dasharray','4 5');pa.setAttribute('opacity','0.55');svg.appendChild(pa);
+ const d=document.createElement('div');d.className='node ext';d.id='x-'+x.id;d.style.left=x.x+'px';d.style.top=x.y+'px';
+ d.innerHTML=`<div class="hd"><span class="ic" style="background:#8b949e">${x.ic}</span><span style="color:#aab4c0">${x.t}</span><span class="inst" style="border-color:#5b6673">\u00A76 EXT</span></div><div class="bd">extension role \u00B7 not in core</div>`;
+ d.onclick=()=>openExt(x.id);cv.appendChild(d);EXTN_BYID[x.id]=x;}
 let STATE={cand:0,tp:0,exploited:0,exploitableTP:0,covOpen:0,covDone:false},CUR_EDGE=null,LAST=null,OPEN=null;
 function frame(ts){for(const ep of EP){let act=ep.e.k(STATE)||0;
   const isCur=CUR_EDGE&&ep.e.f===CUR_EDGE[0]&&ep.e.t===CUR_EDGE[1];if(isCur)act=Math.max(act,6);
@@ -239,59 +260,60 @@ function renderModal(){if(!OPEN||!LAST)return;const s=LAST,role=OPEN,inf=INFO[ro
  const F=s.findings||[];const mine=findingsByRole(role,F);
  let outHtml='';
  if(role==='detector'||role==='triager'||role==='validator'||role==='reporter'){
-   outHtml=`<div class="leg">${mine.length} finding(s) — cliquez pour le détail</div>`+mine.slice(0,14).map(f=>`<div class="row mono frow sev-${f.severity||'low'}" onclick="openFinding('${f.fp}')">${esc(f.cwe||f.vuln_class)} ${esc(f.symbol)} ${f.exploited?'<span class=badv>⚡</span>':''}<span style="color:#8b949e"> ${esc(f.verdict||'')}</span></div>`).join('')||'<span class=hint>—</span>';
- } else if(role==='indexer'){outHtml=`<div class="data">${(s.index||{}).functions||0} fonctions indexées</div>`;}
- else if(role==='cartographer'){outHtml=`<div class="data">${(s.flows||[]).length} chaînes d'appel cartographiées</div>`;}
- else if(role==='coverage'){const c=s.coverage||[];outHtml=`<div class="data">${c.filter(x=>x.state==='covered').length}/${c.length} composants couverts</div>`;}
- else {outHtml=`<div class="data">${(s.agents||[]).length} agents dans le fleet</div>`;}
+   outHtml=`<div class="leg">${mine.length} finding(s) — click for details</div>`+mine.slice(0,14).map(f=>`<div class="row mono frow sev-${f.severity||'low'}" onclick="openFinding('${f.fp}')">${esc(f.cwe||f.vuln_class)} ${esc(f.symbol)} ${f.exploited?'<span class=badv>⚡</span>':''}<span style="color:#8b949e"> ${esc(f.verdict||'')}</span></div>`).join('')||'<span class=hint>—</span>';
+ } else if(role==='indexer'){outHtml=`<div class="data">${(s.index||{}).functions||0} indexed functions</div>`;}
+ else if(role==='cartographer'){outHtml=`<div class="data">${(s.flows||[]).length} mapped call chains</div>`;}
+ else if(role==='coverage'){const c=s.coverage||[];outHtml=`<div class="data">${c.filter(x=>x.state==='covered').length}/${c.length} components covered</div>`;}
+ else if(role==='operator'){const US=s.user_stories||[];outHtml=`<div class="hint" style="margin-bottom:4px">Operator intents that trigger the Orchestrator:</div>`+US.slice(0,10).map(u=>`<div class="row" style="font-size:11px"><b style="color:#58a6ff">${esc(u.id)}</b> ${esc(u.want)} <span style="color:#3fb950">→ ${esc(u.trigger)}</span></div>`).join('');}
+ else {outHtml=`<div class="data">${(s.agents||[]).length} agents in the fleet</div>`;}
  const claim=(s.agents||[]).find(a=>a.role===role&&a.claim);
  document.getElementById('modal').innerHTML=
   `<div class="mh winhead"><span class="ic" style="background:${col}">${(N[role]||{ic:'··'}).ic||'··'}</span>`+
   `<h3 style="color:${col}">${(N[role]||{t:role}).t}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
   `<div class="mb"><div class="desc">${inf.d||''}</div>`+
   `<div class="grid2">`+
-   `<div class="card"><h4>Instances</h4><div class="tok"><span><b style="color:${col}">${run}</b> en cours</span><span><b>${inst}</b> configurées</span></div>`+
-     (claim?`<div class="hint">▶ ${esc(claim.claim)}</div>`:`<div class="hint">— au repos —</div>`)+`</div>`+
-   `<div class="card"><h4>Consommation tokens</h4><div class="tok"><span><b>${rs.calls}</b> appels</span></div>`+
+   `<div class="card"><h4>Instances</h4><div class="tok"><span><b style="color:${col}">${run}</b> running</span><span><b>${inst}</b> configured</span></div>`+
+     (claim?`<div class="hint">▶ ${esc(claim.claim)}</div>`:`<div class="hint">— idle —</div>`)+`</div>`+
+   `<div class="card"><h4>Token usage</h4><div class="tok"><span><b>${rs.calls}</b> calls</span></div>`+
      `<div class="hint">in ${rs.in_tok} · out ${rs.out_tok} tok · $${rs.cost}</div></div>`+
   `</div>`+
-  `<div class="card" style="margin-bottom:12px"><h4>Outils</h4><div class="taglist">${(inf.tools||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`+
+  `<div class="card" style="margin-bottom:12px"><h4>Tools</h4><div class="taglist">${(inf.tools||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`+
   `<div class="grid2">`+
-   `<div class="card"><h4>Entrées</h4><div class="taglist">${(inf.in||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`+
-   `<div class="card"><h4>Sorties</h4><div class="taglist">${(inf.out||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`+
+   `<div class="card"><h4>Inputs</h4><div class="taglist">${(inf.in||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`+
+   `<div class="card"><h4>Outputs</h4><div class="taglist">${(inf.out||[]).map(t=>`<span>${esc(t)}</span>`).join('')}</div></div>`+
   `</div>`+
-  `<div class="card" style="margin-top:12px"><h4>Findings produits / artefacts</h4>${outHtml}</div></div>`;
+  `<div class="card" style="margin-top:12px"><h4>Findings produced / artifacts</h4>${outHtml}</div></div>`;
 }
 
 function renderData(cur){if(!cur)return '';const d=cur.data||{};let h='';
  if(d.testbed_url)h+=`<div class="data mono">${esc(d.testbed_url)}</div>`;
- if(d.functions)h+=`<div class="leg">${d.functions.length} fonctions indexées</div><div class="data mono">${d.functions.slice(0,16).map(f=>`${esc(f.file)} · <b>${esc(f.name)}</b>(${esc((f.params||[]).join(', '))})`).join('<br>')}${d.functions.length>16?'<br>…':''}</div>`;
- if(d.flows)h+=`<div class="leg">chaînes d'appel (entrée → sink)</div><div class="data">${d.flows.map(f=>{const ch=f.chain.map(x=>String(x).startsWith('→sink:')?`<span class=sink>${esc(x)}</span>`:esc(x)).join(' → ');return `<div class="row mono">${f.validated?'<span class=okv>✅</span>':'<span class=badv>⚠️</span>'} <b>${esc(f.entry)}</b>: ${ch}</div>`}).join('')}</div>`;
- if(d.items)h+=`<div class="leg">items de couverture</div><div class="data mono">${d.items.map(i=>esc(i.component)+' × '+esc(i.goal)).join('<br>')}</div>`;
- if(d.candidates)h+=`<div class="leg">candidats produits</div><div class="data">${d.candidates.map(c=>`<div class="row mono">${esc(c.vuln_class)} · <b>${esc(c.symbol)}</b> <span style=color:#8b949e>(${esc(c.file)} · ${esc(c.technique)})</span></div>`).join('')||'—'}</div>`;
+ if(d.functions)h+=`<div class="leg">${d.functions.length} indexed functions</div><div class="data mono">${d.functions.slice(0,16).map(f=>`${esc(f.file)} · <b>${esc(f.name)}</b>(${esc((f.params||[]).join(', '))})`).join('<br>')}${d.functions.length>16?'<br>…':''}</div>`;
+ if(d.flows)h+=`<div class="leg">call chains (entry → sink)</div><div class="data">${d.flows.map(f=>{const ch=f.chain.map(x=>String(x).startsWith('→sink:')?`<span class=sink>${esc(x)}</span>`:esc(x)).join(' → ');return `<div class="row mono">${f.validated?'<span class=okv>✅</span>':'<span class=badv>⚠️</span>'} <b>${esc(f.entry)}</b>: ${ch}</div>`}).join('')}</div>`;
+ if(d.items)h+=`<div class="leg">coverage items</div><div class="data mono">${d.items.map(i=>esc(i.component)+' × '+esc(i.goal)).join('<br>')}</div>`;
+ if(d.candidates)h+=`<div class="leg">candidates produced</div><div class="data">${d.candidates.map(c=>`<div class="row mono">${esc(c.vuln_class)} · <b>${esc(c.symbol)}</b> <span style=color:#8b949e>(${esc(c.file)} · ${esc(c.technique)})</span></div>`).join('')||'—'}</div>`;
  if(d.finding&&d.evidence){const f=d.finding,e=d.evidence;
-   h+=`<div class="leg">finding</div><div class="data mono">${esc(f.cwe)} · <b>${esc(f.symbol)}</b> · ${esc(f.file)}<br>verdict: <b>${esc(f.verdict)}</b> · sévérité: ${esc(f.severity||'—')}</div>`;
-   h+=`<div class="leg">evidence gate — 3 jambes</div><div class="data mono">① atteignabilité: ${esc((e.reachability||{}).symbol||'')} ${esc((e.reachability||{}).note||'')}<br>② frontière: ${esc((e.trust_boundary||{}).note||'')}<br>③ impact: ${esc((e.impact||{}).symbol||'')} ${esc((e.impact||{}).note||'')}</div>`;}
- if('exploited' in d){h+=`<div class="leg">résultat de validation</div><div class="data">${d.exploited?'<span class=okv><b>⚡ EXPLOITÉ sur le testbed</b></span>':'<span class=badv>non reproduit</span>'}</div>`;
-   if(d.poc)h+=`<div class="leg">code d'exploitation généré ET exécuté</div><pre class="data mono">${esc(d.poc)}</pre>`;
-   if(d.trace&&d.trace.request)h+=`<div class="leg">exécution observée</div><div class="data mono"><b>Requête :</b> ${esc(d.trace.request)}<br><b>Réponse :</b><pre class="data" style="margin-top:3px">${esc(d.trace.response||'')}</pre><span class="okv">✅ ${esc(d.trace.impact||'')}</span></div>`;}
- if(d.published)h+=`<div class="leg">findings publiés</div><div class="data">${d.published.map(p=>`<div class="row mono sev-${p.severity}">${esc(p.cwe)} ${esc(p.symbol)} [${esc(p.severity)}]${p.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')}</div>`;
+   h+=`<div class="leg">finding</div><div class="data mono">${esc(f.cwe)} · <b>${esc(f.symbol)}</b> · ${esc(f.file)}<br>verdict: <b>${esc(f.verdict)}</b> · severity: ${esc(f.severity||'—')}</div>`;
+   h+=`<div class="leg">evidence gate — 3 legs</div><div class="data mono">① reachability: ${esc((e.reachability||{}).symbol||'')} ${esc((e.reachability||{}).note||'')}<br>② boundary: ${esc((e.trust_boundary||{}).note||'')}<br>③ impact: ${esc((e.impact||{}).symbol||'')} ${esc((e.impact||{}).note||'')}</div>`;}
+ if('exploited' in d){h+=`<div class="leg">validation result</div><div class="data">${d.exploited?'<span class=okv><b>⚡ EXPLOITED on the testbed</b></span>':'<span class=badv>not reproduced</span>'}</div>`;
+   if(d.poc)h+=`<div class="leg">exploit code generated AND executed</div><pre class="data mono">${esc(d.poc)}</pre>`;
+   if(d.trace&&d.trace.request)h+=`<div class="leg">observed execution</div><div class="data mono"><b>Request:</b> ${esc(d.trace.request)}<br><b>Response:</b><pre class="data" style="margin-top:3px">${esc(d.trace.response||'')}</pre><span class="okv">✅ ${esc(d.trace.impact||'')}</span></div>`;}
+ if(d.published)h+=`<div class="leg">published findings</div><div class="data">${d.published.map(p=>`<div class="row mono sev-${p.severity}">${esc(p.cwe)} ${esc(p.symbol)} [${esc(p.severity)}]${p.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')}</div>`;
  return h;}
 
 const CWE_INFO={
- 'CWE-89':{name:'Injection SQL',problem:"Une requête SQL est construite en concaténant une entrée non fiable.",impact:"Bypass d'authentification, lecture et modification de la base."},
- 'CWE-79':{name:'Cross-Site Scripting',problem:"Du HTML est renvoyé sans échapper l'entrée utilisateur.",impact:"Exécution de JavaScript arbitraire chez la victime, vol de session."},
- 'CWE-78':{name:'Injection de commande',problem:"Une commande shell est bâtie à partir d'entrée non fiable (shell=True).",impact:"Exécution de code arbitraire sur le serveur (RCE)."},
- 'CWE-918':{name:'SSRF',problem:"Le serveur requête une URL contrôlée par l'attaquant, sans allowlist.",impact:"Accès aux services internes et aux métadonnées cloud."},
- 'CWE-639':{name:'IDOR / contrôle d\'accès cassé',problem:"Accès à une ressource par identifiant sans vérifier l'autorisation de l'appelant.",impact:"Lecture/modification des données d'autres utilisateurs."},
- 'CWE-22':{name:'Path traversal',problem:"Un chemin de fichier est bâti à partir d'un nom non assaini.",impact:"Lecture de fichiers arbitraires (secrets, /etc/passwd)."},
- 'CWE-502':{name:'Désérialisation non sûre',problem:"Des données non fiables sont désérialisées (pickle).",impact:"Exécution de code arbitraire (RCE)."},
- 'CWE-798':{name:'Secret en dur',problem:"Un secret/clé est codé en dur dans la source.",impact:"Compromission directe pour quiconque a accès au dépôt."},
- 'CWE-327':{name:'Crypto faible',problem:"Primitive de hachage dépréciée (MD5/SHA-1) pour un usage de sécurité.",impact:"Collisions / cassage facilité."},
- 'CWE-916':{name:'Hash de mot de passe faible',problem:"Mot de passe haché sans KDF lent et salé.",impact:"Cassage des mots de passe par force brute."},
- 'CWE-1035':{name:'Dépendance vulnérable',problem:"Dépendance tierce à vulnérabilité publiée (CVE).",impact:"Exploitation de la faille connue de la dépendance."},
- 'CWE-120':{name:'Copie sans contrôle de borne',problem:"Copie dans un buffer fixe sans vérifier la taille de l'entrée.",impact:"Débordement mémoire — UNIQUEMENT si l'entrée n'est pas bornée par ailleurs."},
- 'CWE-208':{name:'Canal auxiliaire temporel',problem:"Écart de temps potentiellement observable.",impact:"Fuite d'information par mesure du temps — souvent difficile à prouver."},
+ 'CWE-89':{name:'SQL Injection',problem:"A SQL query is built by concatenating untrusted input.",impact:"Authentication bypass, read/modify the database."},
+ 'CWE-79':{name:'Cross-Site Scripting',problem:"HTML is returned without escaping user input.",impact:"Arbitrary JavaScript in the victim's browser, session theft."},
+ 'CWE-78':{name:'Command Injection',problem:"A shell command is built from untrusted input (shell=True).",impact:"Arbitrary code execution on the server (RCE)."},
+ 'CWE-918':{name:'SSRF',problem:"The server fetches an attacker-controlled URL, no allowlist.",impact:"Access to internal services and cloud metadata."},
+ 'CWE-639':{name:'IDOR / broken access control',problem:"Access to a record by id without checking the caller's authorization.",impact:"Read/modify other users' data."},
+ 'CWE-22':{name:'Path traversal',problem:"A file path is built from an unsanitized name.",impact:"Arbitrary file read (secrets, /etc/passwd)."},
+ 'CWE-502':{name:'Unsafe deserialization',problem:"Untrusted data is deserialized (pickle).",impact:"Arbitrary code execution (RCE)."},
+ 'CWE-798':{name:'Hardcoded secret',problem:"A secret/key is hardcoded in the source.",impact:"Direct compromise for anyone with repo access."},
+ 'CWE-327':{name:'Weak crypto',problem:"Deprecated hash primitive (MD5/SHA-1) used for security.",impact:"Collisions / easier cracking."},
+ 'CWE-916':{name:'Weak password hash',problem:"Password hashed without a slow, salted KDF.",impact:"Password cracking by brute force."},
+ 'CWE-1035':{name:'Vulnerable dependency',problem:"Third-party dependency with a published vulnerability (CVE).",impact:"Exploitation of the dependency's known flaw."},
+ 'CWE-120':{name:'Copy without bounds check',problem:"Copy into a fixed buffer without checking input size.",impact:"Memory overflow — ONLY if the input is not otherwise bounded."},
+ 'CWE-208':{name:'Timing side-channel',problem:"Potentially observable timing difference.",impact:"Information leak via timing — often hard to prove."},
 };
 const VERD={'true-positive':{l:'true-positive',c:'tp'},'false-positive':{l:'false-positive',c:'fp'},'not-applicable':{l:'not-applicable',c:'na'},'needs-review':{l:'needs-review',c:'nr'}};
 function highlightCode(src,start){if(!src)return '<div class="hint">code indisponible</div>';
@@ -302,28 +324,33 @@ function openFinding(fp){const s=LAST;if(!s)return;const f=(s.findings||[]).find
  const reason=(f.evidence&&f.evidence.reason)?f.evidence.reason.note:'';
  const col=f.verdict==='true-positive'?(f.exploited?'#f85149':'#3fb950'):'#8b949e';
  let ev='';if(f.verdict==='true-positive'&&f.evidence&&f.evidence.reachability){const e=f.evidence;
-  ev=`<div class="card" style="margin-top:10px"><h4>Preuve — evidence gate (3 jambes)</h4><div class="mono" style="font-size:11px">① atteignabilité : ${esc((e.reachability||{}).note||'')}<br>② frontière : ${esc((e.trust_boundary||{}).note||'')}<br>③ impact : ${esc((e.impact||{}).note||'')}</div></div>`;}
+  ev=`<div class="card" style="margin-top:10px"><h4>Evidence — evidence gate (3 legs)</h4><div class="mono" style="font-size:11px">① reachability: ${esc((e.reachability||{}).note||'')}<br>② boundary: ${esc((e.trust_boundary||{}).note||'')}<br>③ impact: ${esc((e.impact||{}).note||'')}</div></div>`;}
  OPEN='finding:'+fp;
  document.getElementById('modal').innerHTML=
   `<div class="mh winhead"><span class="ic" style="background:${col}">⚠</span><h3>${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
-  `<div class="mb"><div class="verdbar"><span class="vd ${vd.c}">${vd.l}</span><span class="vd">${esc(f.severity||'')}</span>${f.exploited?'<span class="vd" style="color:#f85149;border-color:#f85149">⚡ exploité en live</span>':''}<span class="vd">${esc(f.technique||'')}</span></div>`+
-   `<div class="card" style="margin-top:10px"><h4>Le problème — ${esc(ci.name)}</h4><div class="expl">${esc(ci.problem)}</div><div class="hint" style="margin-top:6px"><b>Impact :</b> ${esc(ci.impact)}</div></div>`+
-   (reason?`<div class="card" style="margin-top:10px"><h4>Décision du Triager (pourquoi écarté)</h4><div class="expl">${esc(reason)}</div></div>`:'')+ev+
-   `<div class="card" style="margin-top:10px"><h4>Code incriminé — ${esc(f.file)}:${esc(f.symbol)}</h4>${highlightCode(f.source,f.line_start)}</div>`+
-   ((f.exploited&&f.exploit_code)?`<div class="card" style="margin-top:10px"><h4>🧪 Code d'exploitation généré ET exécuté</h4><div class="hint" style="margin-bottom:5px">Ce script a réellement été lancé contre le testbed pour prouver l'exploitabilité.</div><pre class="data mono">${esc(f.exploit_code)}</pre></div>`:'')+
-   ((f.exploited&&f.exploit&&f.exploit.request)?`<div class="card" style="margin-top:10px"><h4>Exécution &amp; résultat observé</h4><div class="mono" style="font-size:11px"><b>Requête envoyée :</b> ${esc(f.exploit.request)}<div style="margin-top:5px"><b>Réponse du testbed (extrait) :</b></div><pre class="data" style="margin-top:3px">${esc(f.exploit.response||'')}</pre><div class="okv" style="margin-top:5px">✅ Impact observé : ${esc(f.exploit.impact||'')}</div></div></div>`:'')+
-   (f.remediation?`<div class="card" style="margin-top:10px"><h4>Remédiation (règle ${esc(f.rule_id||'')})</h4><pre class="expl">${esc(f.remediation)}</pre></div>`:'')+
+  `<div class="mb"><div class="verdbar"><span class="vd ${vd.c}">${vd.l}</span><span class="vd">${esc(f.severity||'')}</span>${f.exploited?'<span class="vd" style="color:#f85149;border-color:#f85149">⚡ exploited live</span>':''}<span class="vd">${esc(f.technique||'')}</span></div>`+
+   `<div class="card" style="margin-top:10px"><h4>The issue — ${esc(ci.name)}</h4><div class="expl">${esc(ci.problem)}</div><div class="hint" style="margin-top:6px"><b>Impact:</b> ${esc(ci.impact)}</div></div>`+
+   (reason?`<div class="card" style="margin-top:10px"><h4>Triager decision (why dismissed)</h4><div class="expl">${esc(reason)}</div></div>`:'')+ev+
+   `<div class="card" style="margin-top:10px"><h4>Offending code — ${esc(f.file)}:${esc(f.symbol)}</h4>${highlightCode(f.source,f.line_start)}</div>`+
+   ((f.exploited&&f.exploit_code)?`<div class="card" style="margin-top:10px"><h4>🧪 Exploit code generated AND executed</h4><div class="hint" style="margin-bottom:5px">This script was actually run against the testbed to prove exploitability.</div><pre class="data mono">${esc(f.exploit_code)}</pre></div>`:'')+
+   ((f.exploited&&f.exploit&&f.exploit.request)?`<div class="card" style="margin-top:10px"><h4>Execution &amp; observed result</h4><div class="mono" style="font-size:11px"><b>Request sent:</b> ${esc(f.exploit.request)}<div style="margin-top:5px"><b>Testbed response (excerpt):</b></div><pre class="data" style="margin-top:3px">${esc(f.exploit.response||'')}</pre><div class="okv" style="margin-top:5px">✅ Observed impact: ${esc(f.exploit.impact||'')}</div></div></div>`:'')+
+   (f.remediation?`<div class="card" style="margin-top:10px"><h4>Remediation (rule ${esc(f.rule_id||'')})</h4><pre class="expl">${esc(f.remediation)}</pre></div>`:'')+
+   ((f.fix&&f.fix.safe_code)?`<div class="card" style="margin-top:10px"><h4 style="color:#3fb950">🛠 Fix proposal — safe code</h4><div class="hint" style="margin-bottom:6px">${(f.fix.steps||[]).map(x=>'• '+esc(x)).join('<br>')}</div><pre class="data mono" style="border-color:#3fb950">${esc(f.fix.safe_code)}</pre></div>`:'')+
   `</div>`;
  document.getElementById('ov').style.display='block';}
+const EXTN_BYID={};
+function openExt(id){const x=EXTN_BYID[id];if(!x)return;OPEN='ext:'+id;
+ document.getElementById('modal').innerHTML=`<div class="mh winhead"><span class="ic" style="background:#8b949e">${x.ic}</span><h3>${esc(x.t)} <span class="vd" style="border-color:#8b949e;color:#8b949e">extension \u00A76</span></h3><span class="x" onclick="closeModal()">\u2715</span></div><div class="mb"><div class="expl">${esc(x.desc)}</div><div class="hint" style="margin-top:8px">Described in spec.md \u00A74.3 / \u00A76 (extension role, not specified with FRs). Build after the eight core roles produce trustworthy findings.</div><div class="hint">Plugs in at: <b>${esc(x.anchor)}</b>.</div></div>`;
+ document.getElementById('ov').style.display='block';}
 function openExchange(f,t){const s=LAST;if(!s||!s.protocol)return;const ex=s.protocol.exchanges||[];
- const e=ex.find(x=>x.frm===f&&x.to===t)||ex.find(x=>x.frm===f&&(x.to==='(tous)'||x.to==='(sortie)'));
+ const e=ex.find(x=>x.frm===f&&x.to===t)||ex.find(x=>x.frm===f&&(x.to==='(all)'||x.to==='(output)'));
  if(!e)return;OPEN='exch:'+e.id;
  document.getElementById('modal').innerHTML=
   `<div class="mh winhead"><span class="ic" style="background:#58a6ff">⇄</span><h3>${esc(e.label)}</h3><span class="x" onclick="closeModal()">✕</span></div>`+
-  `<div class="mb"><div class="verdbar"><span class="vd">${esc(e.frm)} → ${esc(e.to)}</span><span class="vd" style="border-color:#58a6ff;color:#58a6ff">payload : ${esc(e.payload)}</span></div>`+
-   `<div class="card" style="margin-top:10px"><h4>Données (schéma normalisé)</h4><table class="mono" style="font-size:11.5px;width:100%">${(e.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:12px;vertical-align:top">${esc(fl[0])}</td><td style="color:#8b949e">${esc(fl[1])}</td></tr>`).join('')}</table></div>`+
+  `<div class="mb"><div class="verdbar"><span class="vd">${esc(e.frm)} → ${esc(e.to)}</span><span class="vd" style="border-color:#58a6ff;color:#58a6ff">payload: ${esc(e.payload)}</span></div>`+
+   `<div class="card" style="margin-top:10px"><h4>Data (normalized schema)</h4><table class="mono" style="font-size:11.5px;width:100%">${(e.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:12px;vertical-align:top">${esc(fl[0])}</td><td style="color:#8b949e">${esc(fl[1])}</td></tr>`).join('')}</table></div>`+
    `<div class="grid2" style="margin-top:10px"><div class="card"><h4>Format</h4><div class="expl">${esc(e.format)}</div></div>`+
-   `<div class="card"><h4>Références normatives</h4><div class="taglist">${(e.refs||[]).map(r=>`<span>${esc(r)}</span>`).join('')}</div></div></div>`+
+   `<div class="card"><h4>Normative references</h4><div class="taglist">${(e.refs||[]).map(r=>`<span>${esc(r)}</span>`).join('')}</div></div></div>`+
   `</div>`;
  document.getElementById('ov').style.display='block';}
 let PANEL=null,SELFILE=null;
@@ -335,23 +362,23 @@ function selFile(f){SELFILE=f;renderPanels(LAST);}
 function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
  if(PANEL==='res'){let tin=0,tout=0,tc=0,tcost=0;const ks=Object.keys(rs);ks.forEach(r=>{tin+=rs[r].in_tok;tout+=rs[r].out_tok;tc+=rs[r].calls;tcost+=rs[r].cost;});
   const mx=Math.max(1,...ks.map(r=>rs[r].calls));
-  document.getElementById('panel-res').innerHTML=`<h3>Consommation de ressources</h3><div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px">`+
-   `<div class="fcard"><div class="h">Appels LLM</div><b style="font-size:20px">${tc}</b></div>`+
+  document.getElementById('panel-res').innerHTML=`<h3>Resource usage</h3><div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px">`+
+   `<div class="fcard"><div class="h">LLM calls</div><b style="font-size:20px">${tc}</b></div>`+
    `<div class="fcard"><div class="h">Tokens in / out</div><b style="font-size:20px">${tin} / ${tout}</b></div>`+
-   `<div class="fcard"><div class="h">Coût</div><b style="font-size:20px">$${tcost.toFixed(4)}</b><div class="hint">déterministe = $0</div></div>`+
+   `<div class="fcard"><div class="h">Cost</div><b style="font-size:20px">$${tcost.toFixed(4)}</b><div class="hint">deterministic = $0</div></div>`+
    `<div class="fcard"><div class="h">Runtime</div><b style="font-size:20px">${(s.budget||{}).runtime_min||0} min</b></div></div>`+
-   `<div class="bars">`+ks.map(r=>`<div class="bar"><span style="width:96px;color:${COL[r]||'#8b949e'}">${r}</span><i style="width:${Math.round(190*rs[r].calls/mx)}px;background:${COL[r]||'#8b949e'}"></i><span class="hint">${rs[r].calls} appels · ${rs[r].in_tok+rs[r].out_tok} tok · $${rs[r].cost}</span></div>`).join('')+`</div>`;}
+   `<div class="bars">`+ks.map(r=>`<div class="bar"><span style="width:96px;color:${COL[r]||'#8b949e'}">${r}</span><i style="width:${Math.round(190*rs[r].calls/mx)}px;background:${COL[r]||'#8b949e'}"></i><span class="hint">${rs[r].calls} calls · ${rs[r].in_tok+rs[r].out_tok} tok · $${rs[r].cost}</span></div>`).join('')+`</div>`;}
  if(PANEL==='fleet'){const ag=s.agents||[];
-  document.getElementById('panel-fleet').innerHTML=`<h3>Fleet — instances par catégorie (actives / configurées)</h3><div class="fleetgrid">`+
+  document.getElementById('panel-fleet').innerHTML=`<h3>Fleet — instances per role (active / configured)</h3><div class="fleetgrid">`+
    NODES.filter(n=>rs[n.id]).map(n=>{const st=rs[n.id];let dots='';const tot=Math.max(st.configured||1,st.alive,1);
     for(let i=0;i<tot;i++)dots+=`<span class="inst-dot" style="background:${i<st.alive?COL[n.id]:'#2a3340'}"></span>`;
-    return `<div class="fcard"><div class="h" style="color:${COL[n.id]}">${n.t}</div>${dots}<div class="hint">${st.alive} active(s) / ${st.configured||1} configurée(s)</div></div>`;}).join('')+`</div>`;}
+    return `<div class="fcard"><div class="h" style="color:${COL[n.id]}">${n.t}</div>${dots}<div class="hint">${st.alive} active / ${st.configured||1} configured</div></div>`;}).join('')+`</div>`;}
  if(PANEL==='code'){const srcs=s.sources||{};const files=Object.keys(srcs).sort();
   if(!SELFILE||!srcs[SELFILE])SELFILE=files.find(f=>f.endsWith('db.py'))||files[0];
-  document.getElementById('panel-code').innerHTML=`<h3>Code source évalué (${files.length} fichiers)</h3><div style="display:flex;gap:14px"><div style="min-width:170px">`+
+  document.getElementById('panel-code').innerHTML=`<h3>Evaluated source code (${files.length} files)</h3><div style="display:flex;gap:14px"><div style="min-width:170px">`+
    files.map(f=>`<div class="filerow ${f===SELFILE?'on':''}" onclick="selFile('${f}')">${esc(f)}</div>`).join('')+`</div><div style="flex:1;min-width:0">${highlightCode(srcs[SELFILE]||'',1)}</div></div>`;}
  if(PANEL==='find'){const F=s.findings||[];const byv={};F.forEach(f=>{(byv[f.verdict||'candidate']=byv[f.verdict||'candidate']||[]).push(f);});
-  document.getElementById('panel-find').innerHTML=`<h3>Findings — seuls les true-positive sont publiés ; le reste est filtré (cliquez pour le détail)</h3>`+
+  document.getElementById('panel-find').innerHTML=`<h3>Findings — only true-positives are published; the rest is filtered (click for details)</h3>`+
    ['true-positive','false-positive','not-applicable','needs-review'].map(v=>{const l=byv[v]||[];if(!l.length)return '';const vd=VERD[v];
     return `<div style="margin-bottom:8px"><span class="vd ${vd.c}">${vd.l} (${l.length})</span><div style="margin-top:5px">`+
      l.map(f=>`<div class="row mono frow sev-${f.severity||'low'}" onclick="openFinding('${f.fp}')">${esc(f.cwe||f.vuln_class)} · ${esc(f.symbol)} <span style="color:#8b949e">(${esc(f.file)})</span>${f.exploited?' <span class=badv>⚡</span>':''}</div>`).join('')+`</div></div>`;}).join('');}
@@ -359,27 +386,36 @@ function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
   const proven=pr.filter(g=>g.exploited),conf=pr.filter(g=>!g.exploited);
   const stg=(n,l,c)=>`<div class="fstage"><div class="fn" style="color:${c}">${n==null?'—':n}</div><div class="fl">${l}</div></div>`;
   const arr=t=>`<div class="farrow">▶<div class="fd">${t}</div></div>`;
-  const row=g=>`<div class="row mono frow sev-${g.severity}" onclick="openFinding('${g.fps[0]}')">${g.exploited?'<span class=badv>⚡</span> ':''}${esc(g.cwes.join('/'))} · <b>${esc(g.symbol)}</b> <span style="color:#8b949e">(${esc(g.file)})</span>${g.dup?` <span class="chip" style="background:${COL.detector};color:#0b0f14">×${g.fps.length} règles</span>`:''}</div>`;
-  document.getElementById('panel-out').innerHTML=`<h3>Sortie — entonnoir de pertinence &amp; liste priorisée par exploitation réelle</h3>`+
-   `<div class="funnel">`+stg(fu.detected,'détectés','#79c0ff')+arr(`−${fu.false_positive||0} FP · −${fu.not_applicable||0} NA · −${fu.needs_review||0} NR`)+
-    stg(fu.true_positive,'confirmés','#bc8cff')+arr(`−${fu.duplicates||0} doublons`)+
-    stg(fu.distinct,'distincts','#34d399')+arr(`${(fu.distinct||0)-(fu.exploited||0)} non démontrés`)+
-    stg(fu.exploited,'exploités','#f85149')+`</div>`+
-   `<div class="grid2" style="margin-top:12px"><div class="card"><h4>⚡ Tier 1 — prouvés en live (prioritaires)</h4>${proven.map(row).join('')||'<span class=hint>—</span>'}</div>`+
-   `<div class="card"><h4>✓ Tier 2 — confirmés, non démontrés en live (présence = vuln)</h4>${conf.map(row).join('')||'<span class=hint>—</span>'}</div></div>`;}
+  const row=g=>`<div class="row mono frow sev-${g.severity}" onclick="openFinding('${g.fps[0]}')">${g.exploited?'<span class=badv>⚡</span> ':''}${esc(g.cwes.join('/'))} · <b>${esc(g.symbol)}</b> <span style="color:#8b949e">(${esc(g.file)})</span>${g.dup?` <span class="chip" style="background:${COL.detector};color:#0b0f14">×${g.fps.length} rules</span>`:''}</div>`;
+  document.getElementById('panel-out').innerHTML=`<h3>Output — relevance funnel &amp; list prioritized by real exploitation</h3>`+
+   `<div class="funnel">`+stg(fu.detected,'detected','#79c0ff')+arr(`−${fu.false_positive||0} FP · −${fu.not_applicable||0} NA · −${fu.needs_review||0} NR`)+
+    stg(fu.true_positive,'confirmed','#bc8cff')+arr(`−${fu.duplicates||0} duplicates`)+
+    stg(fu.distinct,'distinct','#34d399')+arr(`${(fu.distinct||0)-(fu.exploited||0)} not demonstrated`)+
+    stg(fu.exploited,'exploited','#f85149')+`</div>`+
+   `<div class="grid2" style="margin-top:12px"><div class="card"><h4>⚡ Tier 1 — proven live (priority)</h4>${proven.map(row).join('')||'<span class=hint>—</span>'}</div>`+
+   `<div class="card"><h4>✓ Tier 2 — confirmed, not demonstrated live (presence = vuln)</h4>${conf.map(row).join('')||'<span class=hint>—</span>'}</div></div>`;}
  if(PANEL==='tasks'){const TL=s.tasks_list||[];const grp={claimed:[],open:[],blocked:[],closed:[]};
   TL.forEach(t=>{(grp[t.state]||grp.closed).push(t);});
   const sec=(title,arr,col,by)=>arr.length?`<div style="margin-bottom:8px"><div class="leg" style="color:${col};font-weight:700">${title} (${arr.length})</div>`+
     arr.map(t=>`<div class="row mono" style="display:flex;justify-content:space-between;gap:8px"><span><span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'—')}</span> · ${esc(t.title)}</span>${by&&t.by?`<span style="color:var(--ok)">▶ ${esc(t.by)}</span>`:''}</div>`).join('')+`</div>`:'';
-  document.getElementById('panel-tasks').innerHTML=`<h3>File de tâches — en cours (par quel agent) · à venir · faites · bloquées</h3>`+
-   (TL.length?(sec('⏳ En cours',grp.claimed,'#d29922',true)+sec('📥 À venir',grp.open,'#58a6ff',false)+sec('⛔ Bloquées',grp.blocked,'#f85149',false)+sec('✅ Faites',grp.closed.slice(0,100),'#3fb950',false)):'<span class=hint>file vide</span>');}
+  document.getElementById('panel-tasks').innerHTML=`<h3>Task queue — running (by which agent) · upcoming · done · blocked</h3>`+
+   (TL.length?(sec('⏳ Running',grp.claimed,'#d29922',true)+sec('📥 Upcoming',grp.open,'#58a6ff',false)+sec('⛔ Blocked',grp.blocked,'#f85149',false)+sec('✅ Done',grp.closed.slice(0,100),'#3fb950',false)):'<span class=hint>empty queue</span>');}
  if(PANEL==='exch'){const pr=s.protocol||{};const env=pr.envelope||{};const tax=pr.taxonomies||[];const exs=pr.exchanges||[];
-  document.getElementById('panel-exch').innerHTML=`<h3>Échanges normalisés entre agents — quelles données · quel format · quelle référence normative</h3>`+
-   `<div class="hint" style="margin-bottom:8px">Cliquez une arête du graphe (ou une carte ci-dessous) pour le contrat détaillé. Les pointillés = supervision de l'Orchestrateur vers tous les agents.</div>`+
-   `<div class="card" style="margin-bottom:10px"><h4>Enveloppe commune (portée par tout message)</h4><table class="mono" style="font-size:11px">${(env.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:10px">${esc(fl[0])}</td><td style="color:#8b949e;padding-right:10px">${esc(fl[1])}</td><td style="color:#667">${esc(fl[2])}</td></tr>`).join('')}</table><div class="hint" style="margin-top:5px">Format : ${esc(env.format||'')} · Réf : ${(env.refs||[]).join(', ')}</div></div>`+
-   `<div class="card" style="margin-bottom:10px"><h4>Taxonomies (vocabulaires fermés — valeur hors liste rejetée)</h4>${tax.map(t=>`<div class="row" style="font-size:11px"><b>${esc(t.name)}</b> : <span style="color:#c9d1d9">${esc(t.values)}</span> <span class="hint">— ${esc(t.ref)}</span></div>`).join('')}</div>`+
-   `<div class="leg">Contrats d'échange</div><div class="fleetgrid">`+
+  document.getElementById('panel-exch').innerHTML=`<h3>Normalized inter-agent exchanges — what data · what format · what normative reference</h3>`+
+   `<div class="hint" style="margin-bottom:8px">Click a graph edge (or a card below) for the detailed contract. Dashed = Orchestrator supervision over all agents.</div>`+
+   `<div class="card" style="margin-bottom:10px"><h4>Common envelope (carried by every message)</h4><table class="mono" style="font-size:11px">${(env.fields||[]).map(fl=>`<tr><td style="color:#79c0ff;padding-right:10px">${esc(fl[0])}</td><td style="color:#8b949e;padding-right:10px">${esc(fl[1])}</td><td style="color:#667">${esc(fl[2])}</td></tr>`).join('')}</table><div class="hint" style="margin-top:5px">Format: ${esc(env.format||'')} · Refs: ${(env.refs||[]).join(', ')}</div></div>`+
+   `<div class="card" style="margin-bottom:10px"><h4>Taxonomies (closed vocabularies — out-of-list value rejected)</h4>${tax.map(t=>`<div class="row" style="font-size:11px"><b>${esc(t.name)}</b> : <span style="color:#c9d1d9">${esc(t.values)}</span> <span class="hint">— ${esc(t.ref)}</span></div>`).join('')}</div>`+
+   `<div class="leg">Exchange contracts</div><div class="fleetgrid">`+
     exs.map(e=>`<div class="fcard frow" onclick="openExchange('${e.frm}','${e.to}')"><div class="h">${esc(e.frm)} → ${esc(e.to)}</div><div style="font-size:11px;color:#c9d1d9">${esc(e.label)}</div><div class="hint">payload <b>${esc(e.payload)}</b> · ${esc(e.format)}</div><div class="hint" style="color:#58a6ff">${(e.refs||[]).join(' · ')}</div></div>`).join('')+`</div>`;}
+ if(PANEL==='fixes'){const F=(s.findings||[]).filter(f=>f.verdict==='true-positive'&&f.fix&&f.fix.safe_code);
+  const seen={},rows=[];F.forEach(f=>{const k=f.file+'::'+f.symbol;if(seen[k])return;seen[k]=1;rows.push(f);});
+  document.getElementById('panel-fixes').innerHTML=`<h3>Remediation — proposed safe-code fixes (Remediator role)</h3>`+
+   rows.map(f=>`<div class="card" style="margin-bottom:8px"><div class="h" style="display:flex;gap:8px;align-items:center"><span class="vd" style="color:${f.exploited?'#f85149':'#3fb950'};border-color:${f.exploited?'#f85149':'#3fb950'}">${esc(f.cwe)}</span> <b>${esc(f.symbol)}</b> <span class="hint">${esc(f.file)}</span></div><div class="hint" style="margin:4px 0">${(f.fix.steps||[]).map(x=>'• '+esc(x)).join('<br>')}</div><pre class="data mono" style="border-color:#3fb950">${esc(f.fix.safe_code)}</pre></div>`).join('')||'<span class=hint>no fixes yet</span>';}
+ if(PANEL==='stories'){const US=s.user_stories||[];
+  document.getElementById('panel-stories').innerHTML=`<h3>User stories — operator intents that TRIGGER the Orchestrator</h3>`+
+   `<div class="hint" style="margin-bottom:8px">Each story is the "why" behind an operator action; the <b>Trigger</b> is what starts/steers the pipeline via the Orchestrator (operator → orchestrator).</div>`+
+   `<table class="mono" style="font-size:11px;width:100%"><tr style="color:#8b949e"><td>ID</td><td>Persona</td><td>Wants to…</td><td>Trigger →</td><td>Orchestrator does</td><td>Maps</td></tr>`+
+   US.map(u=>`<tr><td style="color:#58a6ff;vertical-align:top">${esc(u.id)}</td><td style="vertical-align:top">${esc(u.persona)}</td><td style="color:#c9d1d9;vertical-align:top">${esc(u.want)}</td><td style="color:#3fb950;vertical-align:top">${esc(u.trigger)}</td><td style="color:#8b949e;vertical-align:top">${esc(u.to)}</td><td class="hint" style="vertical-align:top">${esc(u.maps)}</td></tr>`).join('')+`</table>`;}
  if(PANEL==='tools'){const T=s.tools||[];const FN=s.tool_functions||[];
   const ICOL={mcp:'#e879f9',sarif:'#34d399',cli:'#58a6ff',rest:'#f59e0b',lib:'#8b949e'};
   const ACOL={Indexer:'#39c5cf',Cartographe:'#34d399',Detector:'#f59e0b',Triager:'#bc8cff',Validator:'#f85149',Reporter:'#7ee787'};
@@ -388,15 +424,15 @@ function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
     `<a href="${t.homepage}" target="_blank" style="color:var(--ink);text-decoration:none">${esc(t.name)}</a>`+
     `<span class="vd" style="background:${ICOL[t.integration]||'#8b949e'};color:#0b0f14">${t.integration.toUpperCase()}</span>`+
     (t.mcp?`<span class="vd" style="border-color:#e879f9;color:#e879f9">MCP</span>`:'')+
-    (t.available===true?'<span class="inst-dot" style="background:#3fb950" title="installé localement"></span>':t.available===false?'<span class="inst-dot" style="background:#2a3340" title="non installé"></span>':'')+
+    (t.available===true?'<span class="inst-dot" style="background:#3fb950" title="installed locally"></span>':t.available===false?'<span class="inst-dot" style="background:#2a3340" title="not installed"></span>':'')+
     `</div><div style="font-size:11px;color:#c9d1d9;margin:3px 0">${esc(t.task)}</div>`+
     `<div class="hint" style="font-family:ui-monospace,Menlo,monospace">$ ${esc(t.invoke)}</div>`+
-    (t.mcp?`<div class="hint" style="margin-top:3px;color:#e879f9">via MCP : ${esc(t.mcp)}</div>`:'')+`</div>`;
-  document.getElementById('panel-tools').innerHTML=`<h3>Librairie d'outils — par FONCTION du pipeline : où ça se branche, ce que ça injecte, comment l'intégrer</h3>`+
-   `<div class="hint" style="margin-bottom:8px">Le LLM raisonne ; les outils déterministes sont des oracles. Semgrep, sqlmap… ne sont que des <b>exemples interchangeables</b> de chaque fonction. Badge = mode d'intégration (CLI · SARIF · MCP · REST · LIB) ; pastille verte = binaire détecté localement.</div>`+
+    (t.mcp?`<div class="hint" style="margin-top:3px;color:#e879f9">via MCP: ${esc(t.mcp)}</div>`:'')+`</div>`;
+  document.getElementById('panel-tools').innerHTML=`<h3>Tool library — by PIPELINE FUNCTION: where it plugs in, what it injects, how to integrate</h3>`+
+   `<div class="hint" style="margin-bottom:8px">The LLM reasons; deterministic tools are oracles. Semgrep, sqlmap… are just <b>interchangeable examples</b> of each function. Badge = integration mode (CLI · SARIF · MCP · REST · LIB); green dot = binary detected locally.</div>`+
    FN.map(f=>{const tools=byfn[f.id]||[];if(!tools.length)return '';
     return `<div class="card" style="margin-bottom:10px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="font-size:13px">${esc(f.label)}</b><span class="vd" style="background:${ACOL[f.agent]||'#8b949e'};color:#0b0f14">→ ${esc(f.agent)}</span></div>`+
-     `<div class="hint" style="margin:4px 0 8px"><b>Injecte dans le pipeline :</b> ${esc(f.feeds)}<br><b>Mode d'intégration :</b> ${esc(f.how)}</div>`+
+     `<div class="hint" style="margin:4px 0 8px"><b>Injects into the pipeline:</b> ${esc(f.feeds)}<br><b>Integration mode:</b> ${esc(f.how)}</div>`+
      `<div class="fleetgrid">${tools.map(card).join('')}</div></div>`;}).join('');}
 }
 function render(s){LAST=s;
@@ -414,32 +450,32 @@ function render(s){LAST=s;
   b.textContent='×'+conf+(run?(' · '+run+' actif'+(run>1?'s':'')):'');
   b.classList.toggle('run',run>0);b.style.background=run>0?COL[n.id]:'#0b0f14';}
  document.getElementById('run').textContent='run '+(s.run_dir||'—');
- const cb=document.getElementById('cov');cb.textContent=s.coverage_complete?'couverture complète':'couverture en cours';cb.className='badge'+(s.coverage_complete?' on':'');
+ const cb=document.getElementById('cov');cb.textContent=s.coverage_complete?'coverage complete':'coverage in progress';cb.className='badge'+(s.coverage_complete?' on':'');
  document.getElementById('gap').textContent=(s.rule_gaps||0)+' rule-gap(s)';
  const tech={};F.forEach(f=>{const t=(f.technique||'').split(':')[0];tech[t]=(tech[t]||0)+1});
  const chips=['rule','secrets','deps','exploratory'].map(t=>`<span class="chip ${tech[t]?'hot':''}" style="${tech[t]?'background:'+COL.detector+';border-color:'+COL.detector:''}">${t} ${tech[t]||0}</span>`).join('');
  const corp=Object.entries(s.corpora||{}).map(([k,v])=>`${k}·${v}`).join('  ');
  const cur=id=>s.mode==='step'&&curRole===id;const alive=r=>(rstat[r]||{}).alive||0;
- setbd('operator',`goals définis · <span class="big">1</span> évaluation`,true,cur('operator'));
- setbd('orchestrator',`<span class="dot"></span>${(s.agents||[]).filter(a=>a.status==='alive').length} agents · supervisé`,true,cur('orchestrator'));
- setbd('indexer',`<span class="big">${(s.index||{}).functions||0}</span> fonctions · queryable`,((s.index||{}).functions||0)>0,cur('indexer'));
- setbd('cartographer',`<span class="big">${(s.flows||[]).length}</span> chaînes · carte de flux`,(s.flows||[]).length>0,cur('cartographer'));
- setbd('detector',`<span class="big">${cand}</span> candidats<div class="chips">${chips}</div>`,cand>0,cur('detector'));
+ setbd('operator',`goals set · <span class="big">1</span> evaluation`,true,cur('operator'));
+ setbd('orchestrator',`<span class="dot"></span>${(s.agents||[]).filter(a=>a.status==='alive').length} agents · supervised`,true,cur('orchestrator'));
+ setbd('indexer',`<span class="big">${(s.index||{}).functions||0}</span> functions · queryable`,((s.index||{}).functions||0)>0,cur('indexer'));
+ setbd('cartographer',`<span class="big">${(s.flows||[]).length}</span> chains · data-flow map`,(s.flows||[]).length>0,cur('cartographer'));
+ setbd('detector',`<span class="big">${cand}</span> candidates<div class="chips">${chips}</div>`,cand>0,cur('detector'));
  const vv=s.verdicts||{};
- setbd('triager',`<span class="big">${tp}</span> TP confirmés<div class="verdbar"><span class="vd fp">${vv['false-positive']||0} FP</span><span class="vd na">${vv['not-applicable']||0} NA</span><span class="vd nr">${vv['needs-review']||0} NR</span></div>`,tp>0,cur('triager'));
- setbd('validator',`testbed · <span class="big">${exploited}</span> ⚡ exploités`,exploited>0,cur('validator'));
- setbd('reporter',`<span class="big">${(s.funnel||{}).distinct||pub}</span> distincts<div class="verdbar"><span class="vd tp">${(s.funnel||{}).exploited||0} ⚡ prouvés</span><span class="vd">${pub} publiés</span></div>`,pub>0,cur('reporter'));
- setbd('coverage',`${covDone}/${cov.length} couverts<div class="chips"><span class="chip">${corp}</span></div>`,s.coverage_complete,cur('coverage'));
+ setbd('triager',`<span class="big">${tp}</span> confirmed TP<div class="verdbar"><span class="vd fp">${vv['false-positive']||0} FP</span><span class="vd na">${vv['not-applicable']||0} NA</span><span class="vd nr">${vv['needs-review']||0} NR</span></div>`,tp>0,cur('triager'));
+ setbd('validator',`testbed · <span class="big">${exploited}</span> ⚡ exploited`,exploited>0,cur('validator'));
+ setbd('reporter',`<span class="big">${(s.funnel||{}).distinct||pub}</span> distinct<div class="verdbar"><span class="vd tp">${(s.funnel||{}).exploited||0} ⚡ proven</span><span class="vd">${pub} published</span></div>`,pub>0,cur('reporter'));
+ setbd('coverage',`${covDone}/${cov.length} covered<div class="chips"><span class="chip">${corp}</span></div>`,s.coverage_complete,cur('coverage'));
  if(s.mode==='step'){document.getElementById('ctrl').style.display='inline-flex';
    document.getElementById('insp').style.display='block';document.getElementById('stage').classList.add('insp-on');
-   const c=s.current;document.getElementById('stepn').textContent='étape '+(c?c.n:0);
-   document.getElementById('i-ttl').textContent=c?c.title:'— prêt —';
-   document.getElementById('i-sum').textContent=c?c.summary:'Cliquez ⏭ pour démarrer.';
+   const c=s.current;document.getElementById('stepn').textContent='step '+(c?c.n:0);
+   document.getElementById('i-ttl').textContent=c?c.title:'— ready —';
+   document.getElementById('i-sum').textContent=c?c.summary:'Click ⏭ to start.';
    document.getElementById('i-data').innerHTML=renderData(c);
    document.getElementById('i-log').innerHTML=(s.steplog||[]).slice().reverse().map(it=>`<div class="it ${c&&it.n===c.n?'cur':''}">${it.n}. [${it.role}] ${esc(it.title)}</div>`).join('');
    document.getElementById('b-step').disabled=!!s.done;}
- const fu=s.funnel||{};document.getElementById('outflow').textContent=`${fu.detected||cand} détectés → ${fu.true_positive||tp} confirmés → ${fu.distinct||0} distincts → ${fu.exploited||0} exploités · filtrés ${fu.false_positive||0} FP/${fu.not_applicable||0} NA/${fu.needs_review||0} NR`;
- if(OPEN&&!String(OPEN).startsWith('finding:')&&!String(OPEN).startsWith('exch:'))renderModal();
+ const fu=s.funnel||{};document.getElementById('outflow').textContent=`${fu.detected||cand} detected → ${fu.true_positive||tp} confirmed → ${fu.distinct||0} distinct → ${fu.exploited||0} exploited · filtered ${fu.false_positive||0} FP/${fu.not_applicable||0} NA/${fu.needs_review||0} NR`;
+ if(OPEN&&!String(OPEN).startsWith('finding:')&&!String(OPEN).startsWith('exch:')&&!String(OPEN).startsWith('ext:'))renderModal();
  if(PANEL)renderPanels(s);
  renderQueue(s);
 }
@@ -456,12 +492,11 @@ document.addEventListener('mousemove',e=>{if(!_drag)return;_drag.w.style.left=Ma
 document.addEventListener('mouseup',()=>{_drag=null;});
 function toggleQueue(){const w=document.getElementById('qwidget');const sh=w.style.display==='none';w.style.display=sh?'block':'none';document.getElementById('p-tasks').classList.toggle('on',sh);}
 function renderQueue(s){const TL=s.tasks_list||[];const c={claimed:0,open:0,blocked:0,closed:0};TL.forEach(t=>c[t.state]=(c[t.state]||0)+1);
- const cur=TL.filter(t=>t.state==='claimed'),next=TL.filter(t=>t.state==='open'),bl=TL.filter(t=>t.state==='blocked');
+ const IC={closed:'<span style="color:#3fb950">\u2713</span>',claimed:'<span style="color:#d29922">\u25B6</span>',open:'<span style="color:#58a6ff">\u25CB</span>',blocked:'<span style="color:#f85149">\u26D4</span>'};
  document.getElementById('qbody').innerHTML=
-  `<div class="qstat"><span style="color:#d29922">⏳ ${c.claimed} en cours</span> · <span style="color:#58a6ff">📥 ${c.open} à venir</span><br><span style="color:#3fb950">✅ ${c.closed} faites</span>${c.blocked?` · <span style="color:#f85149">⛔ ${c.blocked} bloquées</span>`:''}</div>`+
-  (cur.length?`<div class="leg" style="color:#d29922">en cours</div>`+cur.map(t=>`<div class="qrow"><span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'')}</span> ${esc(t.title)} <span style="color:#3fb950">▶${esc(t.by||'')}</span></div>`).join(''):'')+
-  (next.length?`<div class="leg" style="color:#58a6ff">à venir</div>`+next.slice(0,16).map(t=>`<div class="qrow" style="opacity:.75"><span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'')}</span> ${esc(t.title)}</div>`).join('')+(next.length>16?`<div class="hint">… +${next.length-16}</div>`:''):'')+
-  (bl.length?`<div class="leg" style="color:#f85149">bloquées</div>`+bl.map(t=>`<div class="qrow" style="color:#f85149">${esc(t.title)}</div>`).join(''):'');}
+  `<div class="qstat">\u2713 ${c.closed} done \u00B7 \u25B6 ${c.claimed} running \u00B7 \u25CB ${c.open} to do${c.blocked?` \u00B7 \u26D4 ${c.blocked} blocked`:''}</div>`+
+  `<div class="hint" style="margin-bottom:4px">Full execution sequence (${TL.length} tasks)</div>`+
+  TL.map(t=>`<div class="qrow ${t.state==='claimed'?'qcur':''}">${IC[t.state]||''} <span style="color:${COL[t.role]||'#8b949e'}">${esc(t.role||'')}</span> ${esc(t.title)}${t.by?` <span style="color:#d29922">${esc(t.by)}</span>`:''}</div>`).join('');}
 document.getElementById('b-step').onclick=doStep;document.getElementById('b-reset').onclick=doReset;document.getElementById('b-play').onclick=toggleAuto;
 addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 (async()=>{const s=await getState();if(!s)return;render(s);

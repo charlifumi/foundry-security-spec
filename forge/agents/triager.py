@@ -40,16 +40,16 @@ def handle(task, ctx, agent_id) -> list:
     # 1) Hors périmètre : code d'exemple / échantillon / démo -> not-applicable (FR-055).
     if re.search(r"example|sample|demo", file, re.I) or re.search(r"example|sample", symbol, re.I):
         ctx.findings.set_verdict(fp, "not-applicable",
-                                 {"reason": {"note": "code d'exemple, hors périmètre d'évaluation"}},
+                                 {"reason": {"note": "example code, out of evaluation scope"}},
                                  severity=p.get("severity"), cwe=cwe, owasp=p.get("owasp"))
         return []
 
     # 2) Présence = vuln (secret, crypto déprécié, dépendance) : carve-out FR-087a.
     if p.get("presence_is_vuln") or cwe in PRESENCE_CWES:
         evidence = {
-            "reachability": {"file": file, "symbol": symbol, "note": "inclus au build"},
-            "trust_boundary": {"note": "le dépôt source lui-même (FR-087a)"},
-            "impact": {"file": file, "symbol": symbol, "note": "exposition/primitive dépréciée"},
+            "reachability": {"file": file, "symbol": symbol, "note": "included in the build"},
+            "trust_boundary": {"note": "the source repository itself (FR-087a)"},
+            "impact": {"file": file, "symbol": symbol, "note": "exposure/deprecated primitive"},
         }
         if ctx.index.resolve_citation(file, symbol) or _file_exists(ctx, file):
             return _confirm(ctx, fp, evidence, p, cwe)
@@ -67,9 +67,9 @@ def handle(task, ctx, agent_id) -> list:
             ctx.findings.set_verdict(
                 fp, "false-positive",
                 {"reason": {"file": file, "symbol": symbol,
-                            "note": f"appelant(s) {who} bornent l'entrée (ex. [:64]) sous la "
-                                    f"taille du buffer (128) ; débordement impossible, non "
-                                    f"exploitable dans ce contexte d'appel"}},
+                            "note": f"caller(s) {who} bound the input (e.g. [:64]) below the "
+                                    f"buffer size (128); overflow impossible, not "
+                                    f"exploitable in this call context"}},
                 severity=p.get("severity"), cwe=cwe, owasp=p.get("owasp"))
             return []
 
@@ -78,19 +78,19 @@ def handle(task, ctx, agent_id) -> list:
         ctx.findings.set_verdict(
             fp, "false-positive",
             {"reason": {"file": file, "symbol": symbol,
-                        "note": f"entrée assainie avant le sink (validateurs: "
-                                f"{', '.join(code_validators)}) ; non exploitable"}},
+                        "note": f"input sanitized before the sink (validators: "
+                                f"{', '.join(code_validators)}); not exploitable"}},
             severity=p.get("severity"), cwe=cwe, owasp=p.get("owasp"))
         return []
 
     # 3c) Gate à 3 jambes, citations vérifiées STRICTEMENT dans l'index (FR-088).
     evidence = {
         "reachability": {"file": file, "symbol": symbol,
-                         "note": "fonction atteignable depuis un point d'entrée HTTP"},
+                         "note": "function reachable from an HTTP entry point"},
         "trust_boundary": {"file": file, "symbol": symbol,
-                           "note": "entrée non fiable utilisée sans validation"},
+                           "note": "untrusted input used without validation"},
         "impact": {"file": file, "symbol": symbol,
-                   "note": f"sink {cwe} atteint dans cette fonction"},
+                   "note": f"sink {cwe} reached in this function"},
     }
     if all(ctx.index.resolve_citation(c["file"], c["symbol"])
            for c in evidence.values() if "symbol" in c):

@@ -65,7 +65,7 @@ def _rules(task, ctx) -> list:
             fp = ctx.findings.add_candidate(
                 file=fi.file, symbol=fi.name, vuln_class=rule.cwe,
                 title=rule.title, technique=f"rule:{rule.id}",
-                description=f"Règle {rule.id} déclenchée (motif: {pat}).")
+                description=f"Rule {rule.id} triggered (pattern: {pat}).")
             follow.append(_triage_task(fp, {
                 "cwe": rule.cwe, "owasp": rule.owasp, "severity": rule.severity,
                 "rule_id": rule.id, "presence_is_vuln": rule.cwe in ("CWE-798", "CWE-327", "CWE-916")}))
@@ -87,8 +87,8 @@ def _secrets(task, ctx) -> list:
                         var = m.group(1)
                         fp = ctx.findings.add_candidate(
                             file=rel, symbol=var, vuln_class=cwe,
-                            title=f"Secret en dur ({var})", technique="secrets",
-                            description=f"Secret littéral assigné à {var} dans le code source.")
+                            title=f"Hardcoded secret ({var})", technique="secrets",
+                            description=f"Literal secret assigned to {var} in the source code.")
                         follow.append(_triage_task(fp, {
                             "cwe": cwe, "owasp": "A07", "severity": "high",
                             "presence_is_vuln": True}))
@@ -112,7 +112,7 @@ def _deps(task, ctx) -> list:
         if adv and _lt(ver, adv["vuln_below"]):
             fp = ctx.findings.add_candidate(
                 file="requirements.txt", symbol=f"{pkg}=={ver}", vuln_class="CWE-1035",
-                title=f"Dépendance vulnérable : {pkg} {ver} ({adv['cve']})", technique="deps",
+                title=f"Vulnerable dependency: {pkg} {ver} ({adv['cve']})", technique="deps",
                 description=f"{pkg}=={ver} < {adv['vuln_below']} — {adv['cve']}.")
             follow.append(_triage_task(fp, {
                 "cwe": "CWE-1035", "owasp": "A06", "severity": adv["sev"],
@@ -142,10 +142,10 @@ def _explore(task, ctx) -> list:
         if looks_idor:
             fp = ctx.findings.add_candidate(
                 file=fi.file, symbol=fi.name, vuln_class="CWE-639",
-                title="Référence directe à un objet sans contrôle d'accès (IDOR)",
+                title="Insecure direct object reference (IDOR)",
                 technique="exploratory",
-                description=f"{fi.name} expose des données par identifiant sans vérifier "
-                            f"l'autorisation de l'appelant.")
+                description=f"{fi.name} exposes data by id without checking "
+                            f"the caller's authorization.")
             follow.append(_triage_task(fp, {
                 "cwe": "CWE-639", "owasp": "A01", "severity": "high",
                 "presence_is_vuln": False, "rule_gap": True}))
@@ -154,9 +154,9 @@ def _explore(task, ctx) -> list:
     # résoudra pas -> le gate doit démoter en needs-review (montre le filtre anti-fiction).
     fp = ctx.findings.add_candidate(
         file="app.py", symbol="suspected_timing_side_channel", vuln_class="CWE-208",
-        title="Canal auxiliaire temporel suspecté (non prouvé)", technique="exploratory",
-        description="Écart de temps possible à l'authentification ; non localisé dans une "
-                    "fonction précise, donc invérifiable en l'état.")
+        title="Suspected timing side-channel (unproven)", technique="exploratory",
+        description="Possible timing gap at authentication; not located in a "
+                    "specific function, hence unverifiable as-is.")
     follow.append(_triage_task(fp, {"cwe": "CWE-208", "owasp": "A02", "severity": "medium",
                                     "presence_is_vuln": False}))
     return follow

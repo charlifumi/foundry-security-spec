@@ -43,10 +43,10 @@ def run_cartographer(ctx) -> dict:
     # 3) Persistance des documents de carte (FR-035) — lisibles par tous + dashboard.
     map_dir = os.path.join(ctx.run_dir, "map")
     os.makedirs(map_dir, exist_ok=True)
-    lines = ["# Carte de sécurité — flux de données (entrée → sink)\n"]
+    lines = ["# Security map — data flow (entry → sink)\n"]
     for f in flows:
         chain = " → ".join(str(x) for x in f["chain"])
-        status = "✅ validé" if f["validated"] else "⚠️ NON validé (frontière non gardée)"
+        status = "✅ validated" if f["validated"] else "⚠️ NOT validated (unguarded boundary)"
         lines.append(f"- **{f['entry']}** (`{f['file']}`) : {chain}  — {status}")
     with open(os.path.join(map_dir, "data-flow.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines) + "\n")
