@@ -129,6 +129,7 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
   <span class="pull" id="p-fleet" onclick="togglePanel('fleet')">👥 Fleet</span>
   <span class="pull" id="p-code" onclick="togglePanel('code')">&lt;/&gt; Source</span>
   <span class="pull" id="p-find" onclick="togglePanel('find')">🛡 Findings</span>
+  <span class="pull" id="p-map" onclick="togglePanel('map')">🗺 Security map</span>
   <span class="pull" id="p-out" onclick="togglePanel('out')">📤 Prioritized output</span>
   <span class="pull on" id="p-tasks" onclick="toggleQueue()">📋 Queue widget</span>
   <span class="pull" id="p-exch" onclick="togglePanel('exch')">🔀 Exchanges</span>
@@ -141,6 +142,7 @@ background:#0d1117;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rg
 <div class="panel" id="panel-fleet"></div>
 <div class="panel" id="panel-code"></div>
 <div class="panel" id="panel-find"></div>
+<div class="panel" id="panel-map"></div>
 <div class="panel" id="panel-out"></div>
 <div class="panel" id="panel-tasks"></div>
 <div class="panel" id="panel-exch"></div>
@@ -407,6 +409,23 @@ function renderPanels(s){if(!s||!PANEL)return;const rs=s.role_stats||{};
    `<div class="card" style="margin-bottom:10px"><h4>Taxonomies (closed vocabularies — out-of-list value rejected)</h4>${tax.map(t=>`<div class="row" style="font-size:11px"><b>${esc(t.name)}</b> : <span style="color:#c9d1d9">${esc(t.values)}</span> <span class="hint">— ${esc(t.ref)}</span></div>`).join('')}</div>`+
    `<div class="leg">Exchange contracts</div><div class="fleetgrid">`+
     exs.map(e=>`<div class="fcard frow" onclick="openExchange('${e.frm}','${e.to}')"><div class="h">${esc(e.frm)} → ${esc(e.to)}</div><div style="font-size:11px;color:#c9d1d9">${esc(e.label)}</div><div class="hint">payload <b>${esc(e.payload)}</b> · ${esc(e.format)}</div><div class="hint" style="color:#58a6ff">${(e.refs||[]).join(' · ')}</div></div>`).join('')+`</div>`;}
+ if(PANEL==='map'){const FL=s.flows||[];
+  const sinkOf=f=>{const e=(f.chain||[]).find(x=>String(x).startsWith('→sink:'));if(!e)return null;const m=String(e).match(/→sink:(\w+)\((CWE-\d+)\)/);return m?{name:m[1],cwe:m[2]}:null;};
+  const entries=[...new Set(FL.map(f=>f.entry))];
+  const sinks=[...new Set(FL.map(sinkOf).filter(Boolean).map(o=>o.cwe))];
+  const SK={'CWE-89':'SQL query','CWE-78':'shell','CWE-22':'file read','CWE-502':'deserialize','CWE-918':'outbound req','CWE-79':'HTML out','CWE-327':'weak hash','CWE-916':'weak hash'};
+  const W=720,rowH=42,H=Math.max(entries.length,sinks.length,1)*rowH+40,ey=i=>34+i*rowH,sy=i=>34+i*rowH;
+  let g=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;background:#0b0f14;border:1px solid var(--line);border-radius:8px">`;
+  FL.forEach(f=>{const o=sinkOf(f);if(!o)return;const i=entries.indexOf(f.entry),j=sinks.indexOf(o.cwe);const x1=196,y1=ey(i)+12,x2=W-196,y2=sy(j)+12,col=f.validated?'#3fb950':'#f85149';
+    g+=`<path d="M ${x1} ${y1} C ${(x1+x2)/2} ${y1}, ${(x1+x2)/2} ${y2}, ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="1.6" opacity="0.75"/>`;});
+  entries.forEach((e,i)=>{g+=`<rect x="20" y="${ey(i)}" width="176" height="24" rx="6" fill="#0f1620" stroke="#39c5cf"/><text x="28" y="${ey(i)+16}" fill="#e6edf3" font-size="11" font-family="monospace">${esc(e).slice(0,24)}</text>`;});
+  sinks.forEach((c,j)=>{g+=`<rect x="${W-196}" y="${sy(j)}" width="176" height="24" rx="6" fill="#0f1620" stroke="#f85149"/><text x="${W-188}" y="${sy(j)+16}" fill="#f85149" font-size="11" font-family="monospace">${esc(c)} · ${SK[c]||'sink'}</text>`;});
+  g+=`<text x="20" y="20" fill="#8b949e" font-size="11">Entry points (attacker-reachable)</text><text x="${W-196}" y="20" fill="#8b949e" font-size="11">Sinks</text></svg>`;
+  const ung=FL.filter(f=>!f.validated).length;
+  document.getElementById('panel-map').innerHTML=`<h3>Security map — Cartographer output (attack surface · trust boundaries · data flow)</h3>`+
+   `<div class="hint" style="margin-bottom:8px">${entries.length} entry points → ${sinks.length} sink classes · <span style="color:#f85149">${ung} unguarded boundaries</span>. Red edge = untrusted input reaches a sink without validation; green = guarded. (FR-030..034)</div>`+
+   g+`<div class="leg" style="margin-top:10px">Call chains (entry → sink)</div>`+
+   FL.map(f=>{const ch=(f.chain||[]).map(x=>String(x).startsWith('→sink:')?`<span class=sink>${esc(x)}</span>`:esc(x)).join(' → ');return `<div class="row mono">${f.validated?'<span class=okv>✅</span>':'<span class=badv>⚠️</span>'} <b>${esc(f.entry)}</b> <span style="color:#8b949e">(${esc(f.file)})</span>: ${ch}</div>`;}).join('')||'<span class=hint>map not built yet</span>';}
  if(PANEL==='fixes'){const F=(s.findings||[]).filter(f=>f.verdict==='true-positive'&&f.fix&&f.fix.safe_code);
   const seen={},rows=[];F.forEach(f=>{const k=f.file+'::'+f.symbol;if(seen[k])return;seen[k]=1;rows.push(f);});
   document.getElementById('panel-fixes').innerHTML=`<h3>Remediation — proposed safe-code fixes (Remediator role)</h3>`+
