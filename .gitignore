@@ -1,0 +1,19 @@
+# Secrets — jamais committés (FR-127)
+.env
+*.key
+*.pem
+
+# Runs (sorties d'évaluation : base SQLite, rapports, PoC, logs)
+runs/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# OS / éditeurs
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,70 @@
+# forge.yaml — configuration d'une évaluation Forge (exemple)
+# Un seul document versionné (FR-126). Aucun secret ici (FR-127) : voir les *_env.
+
+target:
+  source: ./targets/vulnshop      # arbre source de la cible
+  revision: HEAD                  # pin de révision pour les permalinks (FR-084)
+  scope:
+    include: ["**/*.py", "**/*.html"]
+    exclude: ["**/tests/**", "**/.venv/**"]
+
+testbed:                          # le déploiement jetable que le Validator exploite (FR-060)
+  description: "Flask app sur conteneur Docker, port interne 5000, reset par redémarrage du conteneur."
+  url: http://testbed:5000        # joignable uniquement depuis le réseau sandbox
+  reset: "docker compose restart testbed"
+
+goals: |                          # texte libre — l'autorité de ce que "fini" veut dire (FR-068)
+  Trouver et démontrer : bypass d'authentification, RCE, accès non autorisé aux données
+  d'autres utilisateurs, accès à des ressources internes. Tester toutes les routes HTTP exposées.
+
+rules:                            # hard rules (FR-110/111) + scope d'actions
+  hard:
+    - "Ne cibler QUE le testbed ; aucun autre hôte."
+    - "Pas de déni de service, pas de suppression/modification de données."
+    - "N'agir que sur les comptes de test fournis."
+  out_of_scope_hosts: ["*.cisco.com", "169.254.169.254"]
+
+detection:
+  corpus: ./rules                 # corpus CodeGuard versionné (FR-041)
+  techniques: [rules, deps, secrets, exploratory]   # les 4 (FR-037..040)
+
+fleet:                            # composition du fleet (FR-004) — hot-reloadable (FR-009)
+  indexer:        { instances: 1 }
+  cartographer:   { instances: 1 }
+  detector:       { instances: 3, soft_session_min: 150, hard_session_min: 165 }
+  triager:        { instances: 2 }
+  validator:      { instances: 1 }
+  coverage_guide: { instances: 1 }
+  reporter:       { instances: 1 }
+
+sandbox:                          # appliqué par Docker, pas par le prompt (FR-107)
+  network_allowlist:
+    domains: ["api.anthropic.com"]
+    hosts: ["testbed"]
+  read_only_paths: ["./targets", "./forge/llm/prompts", "./sandbox"]
+  read_write_paths: ["./runs"]
+
+budget:                           # caps + yield auto-stop (FR-112..117) — hot-reloadable (FR-128)
+  spend_cap_usd: null             # null = illimité (pré-flight avertit, FR-114)
+  time_cap_min: null
+  yield:
+    threshold: 0.5
+    window_usd: 10
+    min_runtime_min: 20
+    severity_weights: { critical: 31.6, high: 10, medium: 3.16, low: 1 }   # géométrique ~3.16x
+    exploited_multiplier: 2
+
+integrations:                     # bindings concrets §11 — credentials par référence d'env
+  llm:
+    provider: anthropic           # ou: replay  (rejoue des fixtures, sans clé)
+    model: claude-sonnet-4-6
+    api_key_env: ANTHROPIC_API_KEY
+  datastore: sqlite               # runs/<id>/forge.db
+  issue_tracker: filesystem       # rapports MD ; mettre "github" pour activer l'export Issues
+  github:                         # utilisé seulement si issue_tracker == github
+    repo: charlifumi/foundry-security-spec
+    token_env: GITHUB_TOKEN
+
+dashboard:
+  host: 0.0.0.0
+  port: 8000
